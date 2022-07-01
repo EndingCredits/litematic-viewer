@@ -159,7 +159,7 @@
     console.log(width, height, depth);
     
     const structure = new deepslate.Structure([width, height, depth]);
-    //const size = structure.getSize();
+    const structureSize = structure.getSize();
     
     /*
     // Example blocks
@@ -223,7 +223,7 @@
       mat4.translate(view, view, [xOffset, yOffset, -viewDist]);
       mat4.rotate(view, view, xRotation, [1, 0, 0]);
       mat4.rotate(view, view, yRotation, [0, 1, 0]);
-      mat4.translate(view, view, [-size[0] / 2, -size[1] / 2, -size[2] / 2]);
+      mat4.translate(view, view, [-structureSize[0] / 2, -structureSize[1] / 2, -structureSize[2] / 2]);
 
       renderer.drawStructure(view);
     }
