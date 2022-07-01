@@ -36,7 +36,8 @@
     };
     
     // Remove input form to stop people submitting twice
-    input.parentNode.appendChild(document.createTextNode(file.name))
+    input.parentNode.appendChild(document.createElement("br"));
+    input.parentNode.appendChild(document.createTextNode(file.name));
     input.parentNode.removeChild(input);
   }
   
