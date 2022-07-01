@@ -13,7 +13,8 @@
 <body>
   
   <h1>JANKY AF litematic viewer by Ending_Credits</h1>
-  <h2>Complain about it <a href="https://discord.gg/GJckUsHsVB">here (discord invite)</a> (expect improvements soon)</h2>
+  <h2>Powered by <a href="https://github.com/misode/deepslate">DeepSlate</a></h2>
+  <h3>Complain about it <a href="https://discord.gg/GJckUsHsVB">here (discord invite)</a> (expect improvements soon)</h3>
 
 <input type="file" onchange="readFile(this)">
 <br />
@@ -26,20 +27,15 @@
 
     reader.onload = function(evt) {
       const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
-
       console.log(nbtdata.value);
-
-      //const nbtdata = value;
-      
       readLitematic(nbtdata);
-      
-
     };
 
     reader.onerror = function() {
       console.log(reader.error);
     };
-
+    
+    this.parent.remove();
   }
   
   function readLitematic(nbtdata) {
@@ -49,13 +45,14 @@
       var region = regions[regionName].value;
       
       var blockPalette = region.BlockStatePalette.value.value;
-      //nbits = max(ceil(log(len(palette), 2)), 2)
-      nbits = Math.ceil(Math.log2(blockPalette.length));
       
+      // Find the minimum number of bits needed to express all blocks
+      nbits = Math.ceil(Math.log2(blockPalette.length));
+
       width = region.Size.value.x.value; 
       height = region.Size.value.y.value;
       depth = region.Size.value.z.value; 
-     
+
       var blockData = region.BlockStates.value;
 
       var blocks = processBlockData(blockData, nbits, width, height, depth);
@@ -63,11 +60,14 @@
       //console.log(blocks);
       
       renderStructure(blocks, blockPalette);
-      
     }
   }
   
   function processBlockData(blockData, nbits, width, height, depth) {
+    // Function to take the raw array and convert it into a 3D array
+    // The raw data is a list of nbits-wide numbers all packed together into a single array of 64-bit* ints
+    // I ripped off some python code for this, can't remember where from.
+    // (* of course this is javascript so each int is split into an array fo 2 32-bit ints)
     
     mask = (1 << nbits) - 1;
     
@@ -88,6 +88,8 @@
           end_arr_index = ((index + 1) * nbits - 1) >>> 5;
           start_bit_offset = start_offset & 0x1F; // % 32
           
+          // This bit here is to handle the fact that the 64 bit numbers have to be broken down to
+          // 32bit numbers in javascript.
           half_ind = start_arr_index >>> 1;
           if ((start_arr_index & 0x1) == 0) {
             blockStart = blockData[half_ind][1];
@@ -97,6 +99,7 @@
             if (half_ind+1 < blockData.length) {
               blockEnd = blockData[half_ind+1][1];
             } else {
+              // It seems that sometimes the index can extend past the end of the array, but this fix works (for now)
               blockEnd = 0x0;
             }
           }
@@ -115,6 +118,8 @@
     return blocks;
   }
   
+  // Hacky function needed to convert NBT to pure JSON
+  // use at your own risk
   function __stripNBTTyping(nbtData) {
     if (nbtData.hasOwnProperty("type")) {
       switch(nbtData.type) {
@@ -145,6 +150,8 @@
   function renderStructure(blocks, palette) {
   
     console.log( blocks );
+    // Could probably make an intermediate block array type for this
+    // Does js have good 3D arrays?
     width = blocks.length;
     height = blocks[0].length;
     depth = blocks[0][0].length;
@@ -152,20 +159,25 @@
     console.log(width, height, depth);
     
     const structure = new deepslate.Structure([width, height, depth]);
-    const size = structure.getSize();
+    //const size = structure.getSize();
+    
+    /*
+    // Example blocks
     structure.addBlock([1, 0, 0], "minecraft:stone")
     structure.addBlock([2, 0, 0], "minecraft:grass_block", { "snowy": "false" });
     structure.addBlock([1, 1, 0], "minecraft:cake", { "bites": "3" })
     structure.addBlock([0, 0, 0], "minecraft:wall_torch", { "facing": "west" });
     structure.addBlock([2, 1, 0], "minecraft:scaffolding", { "bottom": "false", "waterlogged": "false", "distance": "0" });
+    */
     
+    // Add blocks manually from the blocks loaded from the NBT
     var blockCount = 0
     console.log("Building blocks...");
     for (let x=0; x < width; x++) {
       for (let y=0; y < height; y++) {
         for (let z=0; z < depth; z++) {
           blockID = blocks[x][y][z];
-          if (blockID > 0) {
+          if (blockID > 0) { // Skip air-blocks
           
             if(blockID < palette.length) {
               blockInfo = palette[blockID];
@@ -173,25 +185,29 @@
               blockCount++;
               
               if (blockInfo.hasOwnProperty("Properties")) {
-                blockProperties = __stripNBTTyping(blockInfo.Properties);
+                blockProperties = __stripNBTTyping(blockInfo.Properties); // Go from NBT to JSON
                 structure.addBlock([x, y, z], blockName, blockProperties);
               } else {
                 structure.addBlock([x, y, z], blockName);
               }
               
             } else {
+              // Something obvious so we know when things go wrong
               structure.addBlock([x, y, z], "minecraft:stone")
             }
           }
         }
       }
     }
-    console.log("Done!", blockCount);
+    console.log("Done!", blockCount, " blocks created");
 
     const canvas = document.getElementById('canvas');
     const gl = canvas.getContext('webgl');
+    
+    // Need chunksize 8 as seems to be a max number of faces per chunk that will render
     const renderer = new deepslate.StructureRenderer(gl, structure, deepslateResources, options={chunkSize: 8});
 
+    // Crappy controls
     let viewDist = 4;
     let xRotation = 0.8;
     let yRotation = 0.5;
@@ -255,6 +271,7 @@
 <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
 
 <script>
+  // Taken from Deepslate examples
   var deepslateResources;
   
   const { mat4 } = glMatrix;
