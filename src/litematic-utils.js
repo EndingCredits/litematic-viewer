@@ -1,3 +1,47 @@
+class Litematic { }
+
+class LitematicRegion {
+  constructor(width, height, depth) {
+    this.width = width;
+    this.height = height;
+    this.depth = depth;
+  }
+}
+
+function readLitematicFromNBTData(nbtdata) {
+  // Get rid of all the annoying stuff basically
+
+  var litematic = new Litematic();
+  litematic.regions = new Array();
+
+  var regions = nbtdata.value.Regions.value;
+  for (let regionName in regions) {
+    
+    var region = regions[regionName].value;
+    
+    var blockPalette = __stripNBTTyping(region.BlockStatePalette);
+    
+    // Find the minimum number of bits needed to express all blocks
+    nbits = Math.ceil(Math.log2(blockPalette.length));
+
+    width = region.Size.value.x.value; 
+    height = region.Size.value.y.value;
+    depth = region.Size.value.z.value; 
+
+    var blockData = region.BlockStates.value;
+
+    var blocks = processNBTRegionData(blockData, nbits, width, height, depth);
+
+    var litematicRegion = new LitematicRegion(width, height, depth);
+    litematicRegion.blocks = blocks;
+    litematicRegion.blockPalette = blockPalette;
+
+    litematic.regions.push(litematicRegion);
+  }
+
+  return litematic;
+}
+
 function processNBTRegionData(regionData, nbits, width, height, depth) {
   // Function to take the raw array and convert it into a 3D array
   // The raw data is a list of nbits-wide numbers all packed together into a single array of 64-bit* ints

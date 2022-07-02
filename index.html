@@ -28,10 +28,11 @@
 
             reader.onload = function(evt) {
                const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
+               console.log("Loaded litematic with NBT data:")
                console.log(nbtdata.value);
                var litematic = readLitematicFromNBTData(nbtdata);
 
-               renderStructure(litematic);
+               createRenderer(structureFromLitematic(litematic));
             };
 
             reader.onerror = function() {
