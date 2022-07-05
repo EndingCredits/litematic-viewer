@@ -52,7 +52,18 @@ function loadResources(textureImage) {
 
 function createRenderer(structure) {
 
-  const canvas = document.getElementById('canvas');
+  const canvasContainer = document.getElementById('canvas-container');
+  const canvas = document.createElement('canvas');
+  canvasContainer.appendChild(canvas);
+  // Make it visually fill the positioned parent
+  canvas.style.width ='100%';
+  canvas.style.height=canvas.offsetWidth*0.75;
+  // ...then set the internal size to match
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetWidth*0.75;
+
+  //const canvas = document.getElementById('render-canvas');
+
   const gl = canvas.getContext('webgl');
   
   // Need chunksize 8 as seems to be a max number of faces per chunk that will render

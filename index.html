@@ -1,28 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
    <head>
+
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+      <title>Litematic Viewer</title>
+
+      <!-- Deepslate -->
       <script src="https://unpkg.com/deepslate@0.10.0"></script>
       <script src="https://unpkg.com/gl-matrix@3.3.0/gl-matrix-min.js"></script>
 
       <script src="resource/assets.js"></script>
       <script src="resource/opaque.js"></script>
 
+      <!-- Mateerialize -->
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" media="screen,projection"/>
+
+      <!-- Icons -->
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
       <script src="src/litematic-utils.js"></script>
       <script src="src/script.js"></script>
+
    </head>
 
    <body>
-      <h1>JANKY AF litematic viewer by Ending_Credits</h1>
-      <h2>Powered by <a href="https://github.com/misode/deepslate">DeepSlate</a></h2>
-      <h3>Complain about it <a href="https://discord.gg/GJckUsHsVB">here (discord invite)</a> (expect improvements soon)</h3>
 
-      <input type="file" onchange="readFile(this)">
-      <br />
+     <!--
+      <nav class="">
+         <div class="nav-wrapper deep-orange">
+            <a href="#" class="brand-logo left"></a>
+            <ul id="nav-mobile" class="right">
+              <li><a href="about.html">About</a></li>
+            </ul>
+         </div>
+      </nav>
+      -->
+
+      <div class="section no-pad-bot">
+         <div class="container">
+            <h3 class="header center">JANKY AF litematic viewer by Ending_Credits</h3>
+         </div>
+      </div>
+      
+      <div class="container">
+         <div class="row">
+            <div class="col s12" id="file-loader-panel">
+               <div class="card-panel center gray lighten-1">
+                  <input id="file-upload" type="file" onchange="readFileInput(this)" hidden />
+               
+                  <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+                     <h3>Select file</h3>
+                     
+                     <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
+                  </label>
+               </div>
+            </div>
+
+            <div class="col s12">
+               <div id="canvas-container" width="100%"></div>
+               <!--<canvas id="render-canvas" height="100%"></canvas>-->
+            </div>
+
+         </div>
+      </div>
+
+      <!-- Texture atlas -->
+      <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
+
 
       <script>
-         function readFile(input) {
+
+         function readFileInput(input) {
             let file = input.files[0];
-         
+            readFile(file);
+         }
+
+         function readFile(file) {
             let reader = new FileReader();
             reader.readAsArrayBuffer(file);
 
@@ -33,21 +88,64 @@
                var litematic = readLitematicFromNBTData(nbtdata);
 
                createRenderer(structureFromLitematic(litematic));
+
+               // Remove input form to stop people submitting twice
+               const elem = document.getElementById('file-loader-panel');
+               elem.parentNode.removeChild(elem);
             };
 
             reader.onerror = function() {
                console.log(reader.error);
             };
             
-            // Remove input form to stop people submitting twice
-            input.parentNode.appendChild(document.createElement("br"));
-            input.parentNode.appendChild(document.createTextNode(file.name));
-            input.parentNode.removeChild(input);
          }
+
+         function dragOverHandler(ev) {
+           console.log('File(s) in drop zone');
+
+           // Prevent default behavior (Prevent file from being opened)
+           ev.preventDefault();
+         }
+
+         function dropHandler(ev) {
+           console.log('File(s) dropped');
+
+           // Prevent default behavior (Prevent file from being opened)
+           ev.preventDefault();
+
+           if (ev.dataTransfer.items) {
+             // Use DataTransferItemList interface to access the file(s)
+             for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+               // If dropped items aren't files, reject them
+               if (ev.dataTransfer.items[i].kind === 'file') {
+                 const file = ev.dataTransfer.items[i].getAsFile();
+                 console.log('... file[' + i + '].name = ' + file.name);
+                 readFile(file);
+               }
+             }
+           } else {
+             // Use DataTransfer interface to access the file(s)
+             for (let i = 0; i < ev.dataTransfer.files.length; i++) {
+               console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
+             }
+           }
+         }
+
       </script>
 
-      <canvas id="canvas" width="600" height="480"></canvas>
-      <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
+      <div class="container">
+         <div class="row">
+            <div class="col s12">
+            <h5 class="header light">
+               Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
+            </h5>
+            Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fa-brands fa-discord"></i></a> (expect improvements soon)
+         </div>
+         
+         </div>
+      </div>
 
+      <!--JavaScript at end of body for optimized loading-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
    </body>
 </html>
