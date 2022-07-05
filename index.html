@@ -47,15 +47,17 @@
       <div class="container">
          <div class="row">
             <div class="col s12" id="file-loader-panel">
-               <div class="card-panel center gray lighten-1">
-                  <input id="file-upload" type="file" onchange="readFileInput(this)" hidden />
-               
-                  <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+
+               <input id="file-upload" type="file" onchange="readFileInput(this)" hidden />
+            
+               <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" width="100%">
+                  <div class="card-panel center gray lighten-1">
                      <h3>Select file</h3>
                      
                      <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
-                  </label>
-               </div>
+                  </div>
+               </label>
+               
             </div>
 
             <div class="col s12">
