@@ -56,11 +56,11 @@ function createRenderer(structure) {
   const canvas = document.createElement('canvas');
   canvasContainer.appendChild(canvas);
   // Make it visually fill the positioned parent
-  canvas.style.width ='100%';
-  canvas.style.height=canvas.offsetWidth*0.75;
+  canvas.style.width  = '100%';
+  canvas.style.height = '100%';
   // ...then set the internal size to match
   canvas.width  = canvas.offsetWidth;
-  canvas.height = canvas.offsetWidth*0.75;
+  canvas.height = canvas.offsetWidth*0.75; // 4:3 aspect ratio
 
   //const canvas = document.getElementById('render-canvas');
 
@@ -76,6 +76,9 @@ function createRenderer(structure) {
   let xOffset = 0;
   let yOffset = 0;
   const size = structure.getSize();
+  let cameraPos = vec3.create();
+  vec3.set(cameraPos, -size[0] / 2, -size[1] / 2, -size[2] / 2);
+  
 
   function render() {
 
@@ -84,10 +87,10 @@ function createRenderer(structure) {
     viewDist = Math.max(1, Math.min(20, viewDist));
 
     const view = mat4.create();
-    mat4.translate(view, view, [xOffset, yOffset, -viewDist]);
-    mat4.rotate(view, view, xRotation, [1, 0, 0]);
-    mat4.rotate(view, view, yRotation, [0, 1, 0]);
-    mat4.translate(view, view, [-size[0] / 2, -size[1] / 2, -size[2] / 2]);
+    mat4.rotateX(view, view, xRotation);
+    mat4.rotateY(view, view, yRotation);
+    mat4.translate(view, view, cameraPos);//[xOffset, yOffset, -viewDist]);
+    //mat4.translate(view, view, );
 
     renderer.drawStructure(view);
     renderer.drawGrid(view);
@@ -107,14 +110,24 @@ function createRenderer(structure) {
   })
   canvas.addEventListener('mousemove', evt => {
     if (rotatePos) {
-      yRotation += (evt.clientX - rotatePos[0]) / 100;
-      xRotation += (evt.clientY - rotatePos[1]) / 100;
+      yRotation += (evt.clientX - rotatePos[0]) / 200;
+      xRotation += (evt.clientY - rotatePos[1]) / 200;
       rotatePos = [evt.clientX, evt.clientY];
+
       requestAnimationFrame(render);
+
     } else if (dragPos) {
-      xOffset += (evt.clientX - dragPos[0]) * viewDist / 1000;
-      yOffset -= (evt.clientY - dragPos[1]) * viewDist / 1000;
+      xOffset = (evt.clientX - dragPos[0]) * viewDist / 500;
+      yOffset = (evt.clientY - dragPos[1]) * viewDist / 500;
       dragPos = [evt.clientX, evt.clientY];
+
+      let offset = vec3.create();
+      vec3.set(offset, xOffset, -yOffset, 0);
+      vec3.rotateX(offset, offset, [0,0,0], -xRotation);
+      vec3.rotateY(offset, offset, [0,0,0], -yRotation);
+
+      vec3.add(cameraPos, cameraPos, offset);
+
       requestAnimationFrame(render);
     }
   })
@@ -123,11 +136,20 @@ function createRenderer(structure) {
       dragPos = null;
     } else if (evt.button === 1) {
       rotatePos = null;
+      evt.preventDefault();
     }
   })
   canvas.addEventListener('wheel', evt => {
     evt.preventDefault();
-    viewDist += evt.deltaY / 100;
+    //viewDist += evt.deltaY / 100;
+
+    let offset = vec3.create();
+    vec3.set(offset, 0, 0, - evt.deltaY / 200);
+    vec3.rotateX(offset, offset, [0,0,0], -xRotation);
+    vec3.rotateY(offset, offset, [0,0,0], -yRotation);
+
+    vec3.add(cameraPos, cameraPos, offset);
+
     requestAnimationFrame(render);
   })
 }
