@@ -13,12 +13,28 @@
       <script src="resource/assets.js"></script>
       <script src="resource/opaque.js"></script>
 
-      <!-- Mateerialize -->
+      <!-- Materialize -->
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" media="screen,projection"/>
 
       <!-- Icons -->
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+      <style>
+         @media (prefers-color-scheme: light) {
+           body {
+             background: #FFF;
+             color: #111;
+           }
+         }
+
+         @media (prefers-color-scheme: dark) {
+           body {
+             background: #111;
+             color: #FFF;
+           }
+         }
+      </style>
 
       <script src="src/litematic-utils.js"></script>
       <script src="src/script.js"></script>
@@ -74,6 +90,18 @@
 
       <script>
 
+         document.addEventListener("DOMContentLoaded", function(event) { 
+            const urlParams = new URLSearchParams(window.location.search);
+            const remoteUrl = urlParams.get('remote-url');
+
+            if (remoteUrl) {
+               console.log("Loading file from", remoteUrl);
+               redFileUrl(remoteUrl);
+            }
+         });
+
+
+
          function readFileInput(input) {
             for (let i = 0; i < input.files.length; i++) {
                let file = input.files[i];
@@ -81,11 +109,34 @@
             }
          }
 
+         function redFileUrl(url) {
+            var request = new XMLHttpRequest();
+            request.responseType = 'blob';
+            request.onreadystatechange = function () {
+               if (request.readyState == XMLHttpRequest.DONE) {
+                  if (request.status === 200) {
+                     console.log("Loaded file from remote url");
+                     readFile(request.response);
+                  }
+                  else {
+                     console.log("Error loading litematic");
+                     console.log(request);
+                  }
+               }
+            };
+            request.open('GET', url, true);
+            request.send();
+         }
+
          function readFile(file) {
             let reader = new FileReader();
             reader.readAsArrayBuffer(file);
+            console.log(reader.result);
 
             reader.onload = function(evt) {
+               var buff = new Uint8Array(reader.result);
+               console.log(buff);
+
                const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
                console.log("Loaded litematic with NBT data:")
                console.log(nbtdata.value);
