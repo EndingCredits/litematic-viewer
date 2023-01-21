@@ -75,14 +75,10 @@
                </label>
                
             </div>
-
-            <div class="col s12">
-               <div id="canvas-container" width="100%"></div>
-               <!--<canvas id="render-canvas" height="100%"></canvas>-->
-            </div>
-
+            
          </div>
       </div>
+      <div id="canvas-container" width="100%" tabindex='1'></div>
 
       <!-- Texture atlas -->
       <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
@@ -96,7 +92,7 @@
 
             if (remoteUrl) {
                console.log("Loading file from", remoteUrl);
-               redFileUrl(remoteUrl);
+               readFileURL(remoteUrl);
             }
          });
 
@@ -109,7 +105,8 @@
             }
          }
 
-         function redFileUrl(url) {
+         function readFileURL(url) {
+            var proxyUrl = 'https://api.allorigins.win/raw?url=' + url;
             var request = new XMLHttpRequest();
             request.responseType = 'blob';
             request.onreadystatechange = function () {
@@ -124,7 +121,7 @@
                   }
                }
             };
-            request.open('GET', url, true);
+            request.open('GET', proxyUrl, true);
             request.send();
          }
 

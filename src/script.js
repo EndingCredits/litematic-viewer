@@ -152,6 +152,49 @@ function createRenderer(structure) {
 
     requestAnimationFrame(render);
   })
+
+  const moveDist = 0.2;
+  const keyMoves = {
+    w: [0, 0, moveDist],
+    s: [0, 0, -moveDist],
+    a: [moveDist, 0, 0],
+    d: [-moveDist, 0, 0],
+    Shift: [0, moveDist, 0],
+    ' ': [0, -moveDist, 0]
+  };
+  let pressedKeys = new Set();
+  
+  document.addEventListener('keydown', evt => {
+    if (evt.key in keyMoves) {
+      evt.preventDefault();
+      pressedKeys.add(evt.key);
+    }
+  });
+  
+  document.addEventListener('keyup', evt => {
+    pressedKeys.delete(evt.key);
+  });
+  
+  setInterval(() => {
+    if(pressedKeys.size == 0) return;
+    let offset = vec3.create();
+    vec3.set(offset, 0, 0, 0);
+    for (const key of pressedKeys) {
+        if (key in keyMoves) {
+            vec3.add(offset, offset, keyMoves[key]);
+        }
+    }
+    
+    // This makes keypresses move with respect to your facing direction.
+    // i.e. 'w' when looking down moves down.
+    // Feels pretty weird but could be useful for some things, leaving it as a comment:
+
+    // vec3.rotateX(offset, offset, [0,0,0], -xRotation);
+    
+    vec3.rotateY(offset, offset, [0,0,0], -yRotation);
+    vec3.add(cameraPos, cameraPos, offset);
+    requestAnimationFrame(render);
+  }, 1000/60);
 }
 
 function structureFromLitematic(litematic) {
