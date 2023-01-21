@@ -139,6 +139,11 @@ function createRenderer(structure) {
       evt.preventDefault();
     }
   })
+  canvas.addEventListener('mouseout', evt => {
+    dragPos = null;
+    rotatePos = null;
+    evt.preventDefault();
+  })
   canvas.addEventListener('wheel', evt => {
     evt.preventDefault();
     //viewDist += evt.deltaY / 100;
@@ -195,6 +200,76 @@ function createRenderer(structure) {
     vec3.add(cameraPos, cameraPos, offset);
     requestAnimationFrame(render);
   }, 1000/60);
+
+  canvas.addEventListener("touchstart", touchHandler);
+  canvas.addEventListener("touchmove", touchHandler);
+  canvas.addEventListener("touchend", () => {
+    prevX = null;
+    prevY = null;
+    prevDist = null;
+    prevAvgX = null;
+    prevAvgY = null;
+  });
+
+  const pinchSpeed = 0.015;
+  const dragSpeed = 0.01;
+  let prevX;
+  let prevY;
+  let prevAvgX;
+  let prevAvgY;
+  let prevDist;
+  function touchHandler(evt) {
+    evt.preventDefault();
+    if(evt.touches.length == 1) {
+      if (evt.touches && prevX && prevY) {
+        const dx = evt.touches[0].pageX - prevX; // x movement
+        const dy = evt.touches[0].pageY - prevY; // y movement
+        yRotation += dx / 200;
+        xRotation += dy / 200;
+
+        let offset = vec3.create();
+        vec3.set(offset, 0, 0, 0);
+
+        vec3.rotateX(offset, offset, [0,0,0], -xRotation);
+        vec3.rotateY(offset, offset, [0,0,0], -yRotation);
+    
+        vec3.add(cameraPos, cameraPos, offset);
+    
+        requestAnimationFrame(render);
+      }
+      prevX = evt.touches[0].pageX;
+      prevY = evt.touches[0].pageY;
+
+    } else if(evt.touches.length == 2) {
+
+      // Pinch to move forward/backward
+      const dx = evt.touches[0].pageX - evt.touches[1].pageX;
+      const dy = evt.touches[0].pageY - evt.touches[1].pageY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (!prevDist) prevDist = dist;
+      
+      // Drag to move left/right/up/down
+      const avgX = evt.touches[0].pageX + evt.touches[1].pageX / 2;
+      const avgY = evt.touches[0].pageY + evt.touches[1].pageY / 2;
+      if (!prevAvgX) prevAvgX = avgX;
+      if (!prevAvgY) prevAvgY = avgY;
+      const distX = (avgX - prevAvgX) * dragSpeed;
+      const distY = (prevAvgY - avgY) * dragSpeed;
+
+      // Move camera
+      let offset = vec3.create();
+      vec3.set(offset, 0, 0, 0);
+      vec3.add(offset, offset, [distX, distY, (dist - prevDist) * pinchSpeed]);
+    
+      vec3.rotateX(offset, offset, [0,0,0], -xRotation);  
+      vec3.rotateY(offset, offset, [0,0,0], -yRotation);
+      vec3.add(cameraPos, cameraPos, offset);
+      requestAnimationFrame(render);
+      prevDist = dist;
+      prevAvgX = avgX;
+      prevAvgY = avgY;
+    }
+  }
 }
 
 function structureFromLitematic(litematic) {
