@@ -1,7 +1,8 @@
 var deepslateResources;
 const { mat4, vec3 } = glMatrix;
 
-document.addEventListener("DOMContentLoaded", function(event) { 
+document.addEventListener("DOMContentLoaded", function(event) {
+
   const image = document.getElementById('atlas');
   if (image.complete) {
     loadResources(image);
@@ -348,3 +349,14 @@ function structureFromLitematic(litematic) {
 
   return structure;
 }
+
+
+/* Set the width of the side navigation to 250px */
+function openSettings() {
+  document.getElementById("settings-panel").style.width = "800px";
+}
+
+/* Set the width of the side navigation to 0 */
+function closeSettings() {
+  document.getElementById("settings-panel").style.width = "0";
+} 
