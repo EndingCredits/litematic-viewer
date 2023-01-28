@@ -208,6 +208,10 @@ function createRenderer(structure) {
     s: [0, 0, -moveDist],
     a: [moveDist, 0, 0],
     d: [-moveDist, 0, 0],
+    ArrowUp: [0, 0, moveDist],
+    ArrowDown: [0, 0, -moveDist],
+    ArrowLeft: [moveDist, 0, 0],
+    ArrowRight: [-moveDist, 0, 0],
     Shift: [0, moveDist, 0],
     ' ': [0, -moveDist, 0]
   };
