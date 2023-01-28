@@ -18,7 +18,7 @@
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" media="screen,projection"/>
 
       <!-- Icons -->
-      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+      <script src="https://kit.fontawesome.com/92330e144e.js" crossorigin="anonymous"></script>
 
       <style>
          @media (prefers-color-scheme: light) {
@@ -34,166 +34,541 @@
              color: #FFF;
            }
          }
+
+         #viewer {
+             position:fixed;
+             left: 0;
+             top: 0;
+             width: 100%;
+             height: 100%;
+             z-index: -1;
+         }
       </style>
 
       <script src="src/litematic-utils.js"></script>
       <script src="src/script.js"></script>
 
+      <style>
+         .settings-section {
+            margin-bottom: 20px;
+            display: grid;
+            width: fit-content;
+            margin:auto;
+            grid-template-columns: repeat(4, auto);
+            grid-template-rows: repeat(6, 1fr);
+            grid-column-gap: 0px;
+            grid-row-gap: 0px;
+         }
+
+         #settings-button {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+            z-index: 1;
+         }
+
+         #settings-panel {
+            height: 100%; /* 100% Full-height */
+            width: 0; /* 0 width - change this with JavaScript */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Stay on top */
+            top: 0; /* Stay at the top */
+            right: 0;
+            opacity: 90%;
+            background-color: #111; /* Black*/
+            overflow-x: hidden; /* Disable horizontal scroll */
+            padding-top: 60px; /* Place content 60px from the top */
+            transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
+         }
+
+         /* Position and style the close button (top right corner) */
+         #settings-panel .closebtn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+         }
+      </style>
+
    </head>
 
    <body>
 
-     <!--
-      <nav class="">
-         <div class="nav-wrapper deep-orange">
-            <a href="#" class="brand-logo left"></a>
-            <ul id="nav-mobile" class="right">
-              <li><a href="about.html">About</a></li>
-            </ul>
-         </div>
-      </nav>
-      -->
+      <div id="viewer" width="100%"></div>
 
-      <div class="section no-pad-bot">
+      <div id="main-content">
+
+         <div class="section no-pad-bot">
+            <div class="container">
+               <h3 class="header center">JANKY AF litematic viewer by Ending_Credits</h3>
+            </div>
+         </div>
+
          <div class="container">
-            <h3 class="header center">JANKY AF litematic viewer by Ending_Credits</h3>
-         </div>
-      </div>
-      
-      <div class="container">
-         <div class="row">
-            <div class="col s12" id="file-loader-panel">
+            <div class="row">
+               <div class="col s12" id="file-loader-panel">
+                  <input id="file-upload" type="file" onchange="readFileInput(this)" hidden multiple />
+               
+                  <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" width="100%">
+                     <div class="card-panel center gray lighten-1">
+                        <h3>Select file(s)</h3>
+                        
+                        <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
 
-               <input id="file-upload" type="file" onchange="readFileInput(this)" hidden multiple />
+                     </div>
+                  </label>
+
+                  <h3>or paste a .litematic link:</h3>
+                  <form>
+                     <div class="input-field">
+                        <input id="remote-url" type="text" name="remote-url" class="validate">
+                        <label for="remote-url">URL</label>
+                        <button class="btn waves-effect waves-light" type="submit" onclick="submitFileLink(document.getElementById('remote-url').value)">Submit<i class="material-icons right">send</i></button>
+                     </div>
+                  </form>
+               </div>
+            </div>
+         </div>
+
+         <div class="row">
+            <div class="col s12">
+               <h5 class="header light">
+                  Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
+               </h5>
+               <p>Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fab fa-discord"></i></a> (expect improvements soon)</p>
+               <p>Contribute to the project <a href="https://github.com/endingcredits/litematic-viewer/">here <i class="fa fa-github"></i></a></p>
+            </div>
+         </div>
+
+         <!-- Texture atlas -->
+         <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
+
+         <script>
+            document.addEventListener("DOMContentLoaded", function(event) { 
+               const urlParams = new URLSearchParams(window.location.search);
+               const remoteUrl = urlParams.get('remote-url');
+
+               if (remoteUrl) {
+                  console.log("Loading file from", remoteUrl);
+                  readFileURL(remoteUrl);
+               }
+            });
+
+            function readFileInput(input) {
+               for (let i = 0; i < input.files.length; i++) {
+                  let file = input.files[i];
+                  readFile(file);
+               }
+            }
+
+            function readFileURL(url, useProxy=true) {
+
+               var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+               var request = new XMLHttpRequest();
+               request.responseType = 'blob';
+               request.onreadystatechange = function () {
+                  if (request.readyState == XMLHttpRequest.DONE) {
+                     if (request.status === 200) {
+                        console.log("Loaded file from remote url");
+                        console.log(request.response);
+                        readFile(request.response);
+                     }
+                     else {
+                        console.log("Error loading litematic");
+                        console.log(request);
+                     }
+                  }
+               };
+               request.open('GET', proxyUrl, true);
+               request.send();
+            }
+
+            function readFile(file) {
+               let reader = new FileReader();
+               reader.readAsArrayBuffer(file);
+               console.log(reader.result);
+
+               reader.onload = function(evt) {
+                  var buff = new Uint8Array(reader.result);
+                  console.log(buff);
+
+                  const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
+                  console.log("Loaded litematic with NBT data:")
+                  console.log(nbtdata.value);
+                  var litematic = readLitematicFromNBTData(nbtdata);
+
+                  createRenderer(structureFromLitematic(litematic));
+
+                  // Remove input form to stop people submitting twice
+                  const elem = document.getElementById('file-loader-panel');
+                  elem.parentNode.removeChild(elem);
+               };
+
+               reader.onerror = function() {
+                  console.log(reader.error);
+               };
+               
+            }
+
+            function dragOverHandler(ev) {
+              // Prevent default behavior (Prevent file from being opened)
+              ev.preventDefault();
+            }
+
+            function dropHandler(ev) {
+              console.log('File(s) dropped');
+
+              // Prevent default behavior (Prevent file from being opened)
+              ev.preventDefault();
+
+              if (ev.dataTransfer.items) {
+                // Use DataTransferItemList interface to access the file(s)
+                for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+                  // If dropped items aren't files, reject them
+                  if (ev.dataTransfer.items[i].kind === 'file') {
+                    const file = ev.dataTransfer.items[i].getAsFile();
+                    console.log('... file[' + i + '].name = ' + file.name);
+                    readFile(file);
+                  }
+                }
+              } else {
+                // Use DataTransfer interface to access the file(s)
+                for (let i = 0; i < ev.dataTransfer.files.length; i++) {
+                  console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
+                  console.log('Not implemented!')
+                }
+              }
+            }
+
+         </script>
+
+      </div>
+
+      <!-- open settings panel button -->
+      <a href="javascript:void(0)" id="settings-button" class="openbtn" onclick="openSettings()"><i class="fa fa-cog"></i></a>
+
+      <div id="settings-panel" class="side-nav">
+         <!-- close button -->
+         <a href="javascript:void(0)" class="closebtn" onclick="closeSettings()">&times;</a>
+
+         <!-- add a button to remove the url query params -->
+         <button class="btn waves-effect waves-light red" type="submit" onclick="window.location.href = window.location.href.split('?')[0]">Unload Schematic</button>
+
+         <!-- TODO: Add a way to generate all this automagically -->
+         <p>Controls</p>
+         <div class="settings-section">
+            <div class="col settings-label">
+               Click-drag to: 
+            </div>
+            <div class="col">
+               
+               <div>
+                  <label>
+                     <input name="click-drag" type="radio" class="with-gap setting" data-setting="click-drag" value="move" checked />
+                     <span class="reduced-padding">Move</span>
+                  </label>
+                  <label>
+                     <input name="click-drag" type="radio" class="with-gap setting" data-setting="click-drag" value="pan" />
+                     <span class="reduced-padding">Pan</span>
+                  </label>
+               </div>
+
+            </div>
+            <div class="col">
+               <div>
+
+                  <span class="switch">
+                     <label>
+                        <input type="checkbox" class="setting" data-setting="click-drag-invert" />
+                        <span class="lever"></span>
+                        Invert
+                     </label>
+                  </span>
+               </div>
+            </div>
+
+            <div class="col">
+               <span class="slider">
+                  <label class="setting-label">
+                     Sensitivity
+                     <p class="range-field">
+                        <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="click-drag-sensitivity" />
+                     </p>
+                  </label>
+               </span>
+            </div>
+         
+
+            <div class="col settings-label">
+               Middle-click-drag to: 
+            </div>
+            <div class="col">
+               <div>
+                  <label>
+                     <input name="middle-click-drag" type="radio" class="with-gap setting" data-setting="middle-click-drag" value="move"/>
+                     <span class="reduced-padding">Move</span>
+                  </label>
+                  <label>
+                     <input name="middle-click-drag" type="radio" class="with-gap setting" data-setting="middle-click-drag" value="pan" checked/>
+                     <span class="reduced-padding">Pan</span>
+                  </label>
+               </div>
+
+            </div>
+            <div class="col">
+               <div>
+
+                  <span class="switch">
+                     <label>
+                        <input type="checkbox" class="setting" data-setting="middle-click-drag-invert" />
+                        <span class="lever"></span>
+                        Invert
+                     </label>
+                  </span>
+               </div>
+
+            </div>
             
-               <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" width="100%">
-                  <div class="card-panel center gray lighten-1">
-                     <h3>Select file(s)</h3>
-                     
-                     <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
-                  </div>
-               </label>
+            <div class="col">
+               <span class="slider">
+                  <label class="setting-label">
+                     Sensitivity
+                     <p class="range-field">
+                        <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="middle-click-drag-sensitivity" />
+                     </p>
+                  </label>
+               </span>
+            </div>
+            
+            <div class="col" style="grid-column: span 4; text-align: center;">
+               These do not work yet:
+            </div>
+
+            <div class="col settings-label">
+               Scroll to: 
+            </div>
+            <div class="col">
+               <div>
+                  <label>
+                     <input name="scroll" type="radio" class="with-gap setting" data-setting="scroll" value="move" checked />
+                     <span class="reduced-padding">Move</span>
+                  </label>
+                  <label>
+                     <input name="scroll" type="radio" class="with-gap setting" data-setting="scroll" value="zoom" />
+                     <span class="reduced-padding">Zoom</span>
+                  </label>
+               </div>
+
+            </div>
+            <div class="col">
+               <div>
+
+                  <span class="switch">
+                     <label>
+                        <input type="checkbox" id="invert-move" class="setting" data-setting="scroll-invert-move" />
+                        <span class="lever"></span>
+                        Invert
+                     </label>
+                  </span>
+               
+               </div>
+            </div>
+            
+            <div class="col">
+               <span class="slider">
+                  <label class="setting-label">
+                     Sensitivity
+                     <p class="range-field">
+                        <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="scroll-sensitivity" />
+                     </p>
+                  </label>
+               </span>
+            </div>
+
+            <div class="col settings-label">
+               One finger touch drag to: 
+            </div>
+            <div class="col">
+               <div>
+                  <label>
+                     <input name="touch-drag" type="radio" class="with-gap setting" data-setting="touch-drag" value="move"/>
+                     <span class="reduced-padding">Move</span>
+                  </label>
+                  <label>
+                     <input name="touch-drag" type="radio" class="with-gap setting" data-setting="touch-drag" value="pan" checked/>
+                     <span class="reduced-padding">Pan</span>
+                  </label>
+               </div>
+
+            </div>
+            <div class="col">
+               
+               <div>
+                  <span class="switch">
+                     <label>
+                        <input type="checkbox" class="setting" data-setting="touch-drag-move-invert" />
+                        <span class="lever"></span>
+                        Invert
+                     </label>
+                  </span>
+               </div>
+
+            </div>
+            
+            <div class="col">
+               <span class="slider">
+                  <label class="setting-label">
+                     Sensitivity
+                     <p class="range-field">
+                        <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="touch-drag-sensitivity" />
+                     </p>
+                  </label>
+               </span>
+            </div>
+            
+            <div class="col settings-label">
+               Two finger touch drag to: 
+            </div>
+            <div class="col">
+               <div>
+                  <label>
+                     <input name="two-finger-drag" type="radio" class="with-gap setting" data-setting="two-finger-drag" value="move" checked/>
+                     <span class="reduced-padding">Move</span>
+                  </label>
+                  <label>
+                     <input name="two-finger-drag" type="radio" class="with-gap setting" data-setting="two-finger-drag" value="pan"/>
+                     <span class="reduced-padding">Pan</span>
+                  </label>
+               </div>
+
+            </div>
+            <div class="col">
+               
+               <div>
+                  <span class="switch">
+                     <label>
+                        <input type="checkbox" class="setting" data-setting="gesture-move-invert" />
+                        <span class="lever"></span>
+                        Invert
+                     </label>
+                  </span>
+               </div>
                
             </div>
             
+            <div class="col">
+               <span class="slider">
+                  <label class="setting-label">
+                     Sensitivity
+                     <p class="range-field">
+                        <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="gesture-sensitivity" />
+                     </p>
+                  </label>
+               </span>
+            </div>
+
+            <div class="col settings-label">
+               Move with: 
+            </div>
+            <div class="col">
+               <div>
+                  <label>
+                     <input name="wasd-move" type="checkbox" class="filled-in setting" data-setting="wasd-move" value="checked" checked/>
+                     <span class="reduced-padding">WASD</span>
+                  </label>
+               </div>
+               <div>
+                  <label>
+                     <input name="arrow-move" type="checkbox" class="filled-in setting" data-setting="arrow-move"/>
+                     <span class="reduced-padding">Arrow Keys</span>
+                  </label>
+               </div>
+               <div>
+                  <label>
+                     <input name="pinch-move" type="checkbox" class="filled-in setting" data-setting="pinch-move" checked/>
+                     <span class="reduced-padding">Pinch</span>
+                  </label>
+               </div>
+
+            </div>
+            <div class="col" style="grid-column: span 2;">
+               <div>
+
+                  <span class="switch">
+                     <label>
+                        <input type="checkbox" class="setting" data-setting="relative-forwards-movement"/>
+                        <span class="lever"></span>
+                        Make forwards movement relative to facing direciton
+                     </label>
+                  </span>
+               
+               </div>
+
+            </div>
          </div>
-      </div>
-      <div id="canvas-container" width="100%" tabindex='1'></div>
 
-      <!-- Texture atlas -->
-      <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
+         <button class="btn waves-effect waves-light" onclick="resetSettings()">Reset Settings</button>
 
+         <script>
+            document.addEventListener('DOMContentLoaded', function() {
+               var elems = document.querySelectorAll('.setting');
+               for (var i = 0; i < elems.length; i++) {
+                  var elem = elems[i];
+                  loadSetting(elem);
+                  
+                  elem.addEventListener('change', function() {
+                     if(this.type === 'checkbox') {
+                        this.value = this.checked;
+                     }
+                     localStorage.setItem(this.getAttribute('data-setting'), this.value);
 
-      <script>
+                     console.log('Setting ' + this.getAttribute('data-setting') + ' to ' + this.value);
+                  });
+               }
+            });
 
-         document.addEventListener("DOMContentLoaded", function(event) { 
-            const urlParams = new URLSearchParams(window.location.search);
-            const remoteUrl = urlParams.get('remote-url');
-
-            if (remoteUrl) {
-               console.log("Loading file from", remoteUrl);
-               readFileURL(remoteUrl);
-            }
-         });
-
-
-
-         function readFileInput(input) {
-            for (let i = 0; i < input.files.length; i++) {
-               let file = input.files[i];
-               readFile(file);
-            }
-         }
-
-         function readFileURL(url) {
-            var proxyUrl = 'https://api.allorigins.win/raw?url=' + url;
-            var request = new XMLHttpRequest();
-            request.responseType = 'blob';
-            request.onreadystatechange = function () {
-               if (request.readyState == XMLHttpRequest.DONE) {
-                  if (request.status === 200) {
-                     console.log("Loaded file from remote url");
-                     readFile(request.response);
-                  }
-                  else {
-                     console.log("Error loading litematic");
-                     console.log(request);
+            function resetSettings() {
+               localStorage.clear();
+               var elems = document.querySelectorAll('.setting');
+               for (var i = 0; i < elems.length; i++) {
+                  var elem = elems[i];
+                  if(elem.type === 'radio' || elem.type === 'checkbox') {
+                     elem.checked = elem.getAttribute('data-default-value') === 'true' ? 'checked' : '';
+                  } else if(elem.type === 'checkbox') {
+                     elem.value = elem.getAttribute('data-default-value');
                   }
                }
-            };
-            request.open('GET', proxyUrl, true);
-            request.send();
-         }
-
-         function readFile(file) {
-            let reader = new FileReader();
-            reader.readAsArrayBuffer(file);
-            console.log(reader.result);
-
-            reader.onload = function(evt) {
-               var buff = new Uint8Array(reader.result);
-               console.log(buff);
-
-               const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
-               console.log("Loaded litematic with NBT data:")
-               console.log(nbtdata.value);
-               var litematic = readLitematicFromNBTData(nbtdata);
-
-               createRenderer(structureFromLitematic(litematic));
-
-               // Remove input form to stop people submitting twice
-               const elem = document.getElementById('file-loader-panel');
-               elem.parentNode.removeChild(elem);
-            };
-
-            reader.onerror = function() {
-               console.log(reader.error);
-            };
-            
-         }
-
-         function dragOverHandler(ev) {
-           // Prevent default behavior (Prevent file from being opened)
-           ev.preventDefault();
-         }
-
-         function dropHandler(ev) {
-           console.log('File(s) dropped');
-
-           // Prevent default behavior (Prevent file from being opened)
-           ev.preventDefault();
-
-           if (ev.dataTransfer.items) {
-             // Use DataTransferItemList interface to access the file(s)
-             for (let i = 0; i < ev.dataTransfer.items.length; i++) {
-               // If dropped items aren't files, reject them
-               if (ev.dataTransfer.items[i].kind === 'file') {
-                 const file = ev.dataTransfer.items[i].getAsFile();
-                 console.log('... file[' + i + '].name = ' + file.name);
-                 readFile(file);
+            }
+            function loadSetting(elem) {
+               var setting = elem.getAttribute('data-setting');
+               var value = localStorage.getItem(setting);
+               
+               switch (elem.type) {
+                  case 'radio':
+                     elem.setAttribute('data-default-value', elem.checked);
+                     if (elem.checked) {
+                        localStorage.setItem(setting, elem.value);
+                     }
+                     if(value === null) return;
+                     isChecked = (value === elem.value);
+                     elem.checked = isChecked ? 'checked' : '';
+                     break;
+                  case 'checkbox':
+                     elem.setAttribute('data-default-value', elem.checked);
+                     if(value === null) return;
+                     elem.checked = (value === 'true') ? 'checked' : '';
+                     break;
+                  default:
+                     elem.setAttribute('data-default-value', elem.value);
+                     if(value === null) return;
+                     elem.value = value;
+                     break;
                }
-             }
-           } else {
-             // Use DataTransfer interface to access the file(s)
-             for (let i = 0; i < ev.dataTransfer.files.length; i++) {
-               console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
-               console.log('Not implemented!')
-             }
-           }
-         }
-
-      </script>
-
-      <div class="container">
-         <div class="row">
-            <div class="col s12">
-            <h5 class="header light">
-               Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
-            </h5>
-            Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fa-brands fa-discord"></i></a> (expect improvements soon)
-         </div>
-         
-         </div>
+            }
+         </script>
       </div>
 
       <!--JavaScript at end of body for optimized loading-->

@@ -1,7 +1,8 @@
 var deepslateResources;
 const { mat4, vec3 } = glMatrix;
 
-document.addEventListener("DOMContentLoaded", function(event) { 
+document.addEventListener("DOMContentLoaded", function(event) {
+
   const image = document.getElementById('atlas');
   if (image.complete) {
     loadResources(image);
@@ -52,21 +53,23 @@ function loadResources(textureImage) {
 
 function createRenderer(structure) {
 
-  const canvasContainer = document.getElementById('canvas-container');
+  // Create canvas and size it appropriately
+  // TODO: Make size change on window resize
+  const viewer = document.getElementById('viewer');
   const canvas = document.createElement('canvas');
-  canvasContainer.appendChild(canvas);
-  // Make it visually fill the positioned parent
-  canvas.style.width  = '100%';
-  canvas.style.height = '100%';
-  // ...then set the internal size to match
-  canvas.width  = canvas.offsetWidth;
-  canvas.height = canvas.offsetWidth*0.75; // 4:3 aspect ratio
+  viewer.appendChild(canvas);
 
-  //const canvas = document.getElementById('render-canvas');
+  canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 
-  const gl = canvas.getContext('webgl');
-  
+  // Remove old content
+  const oldContent = document.getElementById('main-content');
+  oldContent.style.display = "none";
+
+
+  // Create Deepslate Renderer
   // Need chunksize 8 as seems to be a max number of faces per chunk that will render
+  const gl = canvas.getContext('webgl');
   const renderer = new deepslate.StructureRenderer(gl, structure, deepslateResources, options={chunkSize: 8});
 
   // Crappy controls
@@ -80,6 +83,7 @@ function createRenderer(structure) {
   vec3.set(cameraPos, -size[0] / 2, -size[1] / 2, -size[2] / 2);
   
 
+  // refactor this code to use separate functions for each type of control
   function render() {
 
     yRotation = yRotation % (Math.PI * 2);
@@ -95,70 +99,123 @@ function createRenderer(structure) {
     renderer.drawStructure(view);
     renderer.drawGrid(view);
   }
+  
   requestAnimationFrame(render);
 
-  let rotatePos = null;
-  let dragPos = null;
+  function move3d(direction, relativeVertical = true, sensitivity = 1) {
+    let offset = vec3.create();
+    vec3.set(offset,
+      direction[0] * sensitivity,
+      direction[1] * sensitivity,
+      direction[2] * sensitivity);
+    if( relativeVertical) {
+      vec3.rotateX(offset, offset, [0, 0, 0], -xRotation * sensitivity);
+    }
+    vec3.rotateY(offset, offset, [0, 0, 0], -yRotation * sensitivity);
+    vec3.add(cameraPos, cameraPos, offset);
+  }
+  
+  function pan(direction, sensitivity = 1) {
+    // seems backwards but is correct
+    yRotation += direction[0] / 200 * sensitivity;
+    xRotation += direction[1] / 200 * sensitivity;
+  }
+  
+  function move(offset, sensitivity) {
+    xOffset = offset[0] * viewDist / 500 * sensitivity;
+    yOffset = offset[1] * viewDist / 500 * sensitivity;
+    let offset_vector = vec3.create();
+    vec3.set(offset_vector, xOffset, -yOffset, 0);
+    vec3.rotateX(offset_vector, offset_vector, [0, 0, 0], -xRotation);
+    vec3.rotateY(offset_vector, offset_vector, [0, 0, 0], -yRotation);
+    vec3.add(cameraPos, cameraPos, offset_vector);
+  }
+
+  function runMovementFunction(setting, evt, controls, invertSetting = null, sensitivitySetting = null) {
+    
+    const value = localStorage.getItem(setting) ?? document.getElementById(setting).value;
+    let sensitivity = 1;
+    if (sensitivitySetting) {
+      sensitivity *= parseFloat(localStorage.getItem(sensitivitySetting) ?? 1);
+    }
+    if (invertSetting) {
+      const invert = localStorage.getItem(invertSetting) === 'true' ?? document.getElementById(invertSetting)?.checked === 'true';
+      if (invert) {
+        sensitivity *= -1;
+      }
+    }
+    console.log(setting, value, sensitivity);
+    controls[value](evt, sensitivity);
+    // controls[value](evt);
+  }
+  
+  let middleClickPos = null;
+  let leftPos = null;
   canvas.addEventListener('mousedown', evt => {
     if (evt.button === 0) {
       evt.preventDefault();
-      dragPos = [evt.clientX, evt.clientY];
+      leftPos = [evt.clientX, evt.clientY];
     } else if (evt.button === 1) {
       evt.preventDefault();
-      rotatePos = [evt.clientX, evt.clientY];;
+      middleClickPos = [evt.clientX, evt.clientY];;
     }
-  })
+  });
   canvas.addEventListener('mousemove', evt => {
-    if (rotatePos) {
-      yRotation += (evt.clientX - rotatePos[0]) / 200;
-      xRotation += (evt.clientY - rotatePos[1]) / 200;
-      rotatePos = [evt.clientX, evt.clientY];
-
+    if (middleClickPos) {
+      const args = [
+        evt.clientX - middleClickPos[0],
+        evt.clientY - middleClickPos[1]
+      ]
+      runMovementFunction(
+        'middle-click-drag',
+        args,
+        {move, pan},
+        'middle-click-drag-invert',
+        'middle-click-drag-sensitivity'
+      );
+      middleClickPos = [evt.clientX, evt.clientY];
       requestAnimationFrame(render);
-
-    } else if (dragPos) {
-      xOffset = (evt.clientX - dragPos[0]) * viewDist / 500;
-      yOffset = (evt.clientY - dragPos[1]) * viewDist / 500;
-      dragPos = [evt.clientX, evt.clientY];
-
-      let offset = vec3.create();
-      vec3.set(offset, xOffset, -yOffset, 0);
-      vec3.rotateX(offset, offset, [0,0,0], -xRotation);
-      vec3.rotateY(offset, offset, [0,0,0], -yRotation);
-
-      vec3.add(cameraPos, cameraPos, offset);
-
+      
+    } else if (leftPos) {
+      const args = [
+        evt.clientX - leftPos[0],
+        evt.clientY - leftPos[1]
+      ]
+      runMovementFunction('click-drag', args, {move, pan}, 'click-drag-invert', 'click-drag-sensitivity');
+      // move([evt.clientX - leftPos[0], evt.clientY - leftPos[1]]);
+      leftPos = [evt.clientX, evt.clientY];
       requestAnimationFrame(render);
     }
-  })
+  });
   canvas.addEventListener('mouseup', evt => {
     if (evt.button === 0) {
-      dragPos = null;
+      leftPos = null;
     } else if (evt.button === 1) {
-      rotatePos = null;
+      middleClickPos = null;
       evt.preventDefault();
     }
-  })
+  });
+  canvas.addEventListener('mouseout', evt => {
+    leftPos = null;
+    middleClickPos = null;
+    evt.preventDefault();
+  });
   canvas.addEventListener('wheel', evt => {
     evt.preventDefault();
-    //viewDist += evt.deltaY / 100;
-
-    let offset = vec3.create();
-    vec3.set(offset, 0, 0, - evt.deltaY / 200);
-    vec3.rotateX(offset, offset, [0,0,0], -xRotation);
-    vec3.rotateY(offset, offset, [0,0,0], -yRotation);
-
-    vec3.add(cameraPos, cameraPos, offset);
-
+    move3d([0, 0, -evt.deltaY / 200]);
     requestAnimationFrame(render);
-  })
-
+  });
+  
   const moveDist = 0.2;
   const keyMoves = {
     w: [0, 0, moveDist],
     s: [0, 0, -moveDist],
     a: [moveDist, 0, 0],
     d: [-moveDist, 0, 0],
+    ArrowUp: [0, 0, moveDist],
+    ArrowDown: [0, 0, -moveDist],
+    ArrowLeft: [moveDist, 0, 0],
+    ArrowRight: [-moveDist, 0, 0],
     Shift: [0, moveDist, 0],
     ' ': [0, -moveDist, 0]
   };
@@ -177,24 +234,66 @@ function createRenderer(structure) {
   
   setInterval(() => {
     if(pressedKeys.size == 0) return;
-    let offset = vec3.create();
-    vec3.set(offset, 0, 0, 0);
-    for (const key of pressedKeys) {
-        if (key in keyMoves) {
-            vec3.add(offset, offset, keyMoves[key]);
-        }
-    }
-    
-    // This makes keypresses move with respect to your facing direction.
-    // i.e. 'w' when looking down moves down.
-    // Feels pretty weird but could be useful for some things, leaving it as a comment:
 
-    // vec3.rotateX(offset, offset, [0,0,0], -xRotation);
-    
-    vec3.rotateY(offset, offset, [0,0,0], -yRotation);
-    vec3.add(cameraPos, cameraPos, offset);
+    let direction = vec3.create();
+    for (const key of pressedKeys) {
+      vec3.add(direction, direction, keyMoves[key]);
+    }
+    move3d(direction, false);
     requestAnimationFrame(render);
+
   }, 1000/60);
+
+  canvas.addEventListener("touchstart", touchHandler);
+  canvas.addEventListener("touchmove", touchHandler);
+  canvas.addEventListener("touchend", () => {
+    middleClickPos = null;
+    prevDist = null;
+    prevAvgX = null;
+    prevAvgY = null;
+  });
+
+  const pinchSpeed = 0.015;
+  const dragSpeed = 0.01;
+  let prevAvgX;
+  let prevAvgY;
+  let prevDist;
+  function touchHandler(evt) {
+    evt.preventDefault();
+    if(evt.touches.length == 1) {
+      if (evt.touches && middleClickPos) {
+        const dx = evt.touches[0].pageX - middleClickPos[0]; // x movement
+        const dy = evt.touches[0].pageY - middleClickPos[1]; // y movement
+        
+        pan([dx, dy]);
+    
+        requestAnimationFrame(render);
+      }
+      middleClickPos = [evt.touches[0].pageX, evt.touches[0].pageY];
+
+    } else if(evt.touches.length == 2) {
+
+      // Pinch to move forward/backward
+      const dx = evt.touches[0].pageX - evt.touches[1].pageX;
+      const dy = evt.touches[0].pageY - evt.touches[1].pageY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (!prevDist) prevDist = dist;
+      
+      // Drag to move left/right/up/down
+      const avgX = evt.touches[0].pageX + evt.touches[1].pageX / 2;
+      const avgY = evt.touches[0].pageY + evt.touches[1].pageY / 2;
+      if (!prevAvgX) prevAvgX = avgX;
+      if (!prevAvgY) prevAvgY = avgY;
+      const distX = (avgX - prevAvgX) * dragSpeed;
+      const distY = (prevAvgY - avgY) * dragSpeed;
+
+      move3d([distX, distY, (dist - prevDist) * pinchSpeed]);
+      requestAnimationFrame(render);
+      prevDist = dist;
+      prevAvgX = avgX;
+      prevAvgY = avgY;
+    }
+  }
 }
 
 function structureFromLitematic(litematic) {
@@ -250,3 +349,14 @@ function structureFromLitematic(litematic) {
 
   return structure;
 }
+
+
+/* Set the width of the side navigation to 250px */
+function openSettings() {
+  document.getElementById("settings-panel").style.width = "800px";
+}
+
+/* Set the width of the side navigation to 0 */
+function closeSettings() {
+  document.getElementById("settings-panel").style.width = "0";
+} 
