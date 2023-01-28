@@ -207,7 +207,7 @@ function createRenderer(structure) {
     w: [0, 0, moveDist],
     s: [0, 0, -moveDist],
     a: [moveDist, 0, 0],
-    r: [-moveDist, 0, 0],
+    d: [-moveDist, 0, 0],
     Shift: [0, moveDist, 0],
     ' ': [0, -moveDist, 0]
   };
