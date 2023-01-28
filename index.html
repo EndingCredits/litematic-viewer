@@ -18,7 +18,7 @@
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" media="screen,projection"/>
 
       <!-- Icons -->
-      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+      <script src="https://kit.fontawesome.com/92330e144e.js" crossorigin="anonymous"></script>
 
       <style>
          @media (prefers-color-scheme: light) {
@@ -38,6 +38,33 @@
 
       <script src="src/litematic-utils.js"></script>
       <script src="src/script.js"></script>
+      <style>
+         .reduced-padding {
+            padding-left: 24px !important;
+            padding-right: 5px;
+         }
+         .lever {
+            margin-right: 10px !important;
+            padding: 1 !important;
+         }
+         .col {
+            /* flex: 1; */
+            text-align: left;
+         }
+         .settings-section {
+            margin-bottom: 20px;
+            display: grid;
+            width: fit-content;
+            margin:auto;
+            grid-template-columns: repeat(4, auto);
+            grid-template-rows: repeat(6, 1fr);
+            grid-column-gap: 0px;
+            grid-row-gap: 0px;
+         }
+         .settings-label {
+            text-align: right;
+         }
+      </style>
 
    </head>
 
@@ -71,6 +98,14 @@
                      <h3>Select file(s)</h3>
                      
                      <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
+                     <h3>or paste a .litematic link:</h3>
+                     <form >
+                        <div class="input-field">
+                           <input id="remote-url" type="text" name="remote-url" class="validate">
+                           <label for="remote-url">URL</label>
+                           <button class="btn waves-effect waves-light" type="submit" onclick="submitFileLink(document.getElementById('remote-url').value)">Submit<i class="material-icons right">send</i></button>
+                        </div>
+                     </form>
                   </div>
                </label>
                
@@ -96,7 +131,16 @@
             }
          });
 
+         // load file from link, and append the file link to the current url
+         function submitFileLink(url) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const remoteUrl = urlParams.get('remote-url');
 
+            if (remoteUrl) {
+               console.log("Loading file from", remoteUrl);
+               readFileURL(remoteUrl);
+            }
+         }
 
          function readFileInput(input) {
             for (let i = 0; i < input.files.length; i++) {
@@ -107,6 +151,7 @@
 
          function readFileURL(url) {
             var proxyUrl = 'https://api.allorigins.win/raw?url=' + url;
+            // var proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
             var request = new XMLHttpRequest();
             request.responseType = 'blob';
             request.onreadystatechange = function () {
@@ -186,12 +231,330 @@
 
       <div class="container">
          <div class="row">
-            <div class="col s12">
-            <h5 class="header light">
-               Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
-            </h5>
-            Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fa-brands fa-discord"></i></a> (expect improvements soon)
+            <div class="card-panel center gray lighten-1-grid">
+               <!-- add a button to remove the url query params -->
+               <button class="btn waves-effect waves-light red" type="submit" onclick="window.location.href = window.location.href.split('?')[0]">Unload Schematic</button>
+               <p>Controls</p>
+               <div class="settings-section">
+                  <div class="col settings-label">
+                     Click-drag to: 
+                  </div>
+                  <div class="col">
+                     
+                     <div>
+                        <label>
+                           <input name="click-drag" type="radio" class="with-gap setting" data-setting="click-drag" value="move" checked />
+                           <span class="reduced-padding">Move</span>
+                        </label>
+                        <label>
+                           <input name="click-drag" type="radio" class="with-gap setting" data-setting="click-drag" value="pan" />
+                           <span class="reduced-padding">Pan</span>
+                        </label>
+                     </div>
+
+                  </div>
+                  <div class="col">
+                     <div>
+
+                        <span class="switch">
+                           <label>
+                              <input type="checkbox" class="setting" data-setting="click-drag-invert" />
+                              <span class="lever"></span>
+                              Invert
+                           </label>
+                        </span>
+                     </div>
+                  </div>
+
+                  <div class="col">
+                     <span class="slider">
+                        <label class="setting-label">
+                           Sensitivity
+                           <p class="range-field">
+                              <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="click-drag-sensitivity" />
+                           </p>
+                        </label>
+                     </span>
+                  </div>
+               
+
+                  <div class="col settings-label">
+                     Middle-click-drag to: 
+                  </div>
+                  <div class="col">
+                     <div>
+                        <label>
+                           <input name="middle-click-drag" type="radio" class="with-gap setting" data-setting="middle-click-drag" value="move"/>
+                           <span class="reduced-padding">Move</span>
+                        </label>
+                        <label>
+                           <input name="middle-click-drag" type="radio" class="with-gap setting" data-setting="middle-click-drag" value="pan" checked/>
+                           <span class="reduced-padding">Pan</span>
+                        </label>
+                     </div>
+
+                  </div>
+                  <div class="col">
+                     <div>
+
+                        <span class="switch">
+                           <label>
+                              <input type="checkbox" class="setting" data-setting="middle-click-drag-invert" />
+                              <span class="lever"></span>
+                              Invert
+                           </label>
+                        </span>
+                     </div>
+
+                  </div>
+                  
+                  <div class="col">
+                     <span class="slider">
+                        <label class="setting-label">
+                           Sensitivity
+                           <p class="range-field">
+                              <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="middle-click-drag-sensitivity" />
+                           </p>
+                        </label>
+                     </span>
+                  </div>
+                  
+                  <div class="col" style="grid-column: span 4; text-align: center;">
+                     These do not work yet:
+                  </div>
+
+                  <div class="col settings-label">
+                     Scroll to: 
+                  </div>
+                  <div class="col">
+                     <div>
+                        <label>
+                           <input name="scroll" type="radio" class="with-gap setting" data-setting="scroll" value="move" checked />
+                           <span class="reduced-padding">Move</span>
+                        </label>
+                        <label>
+                           <input name="scroll" type="radio" class="with-gap setting" data-setting="scroll" value="zoom" />
+                           <span class="reduced-padding">Zoom</span>
+                        </label>
+                     </div>
+
+                  </div>
+                  <div class="col">
+                     <div>
+
+                        <span class="switch">
+                           <label>
+                              <input type="checkbox" id="invert-move" class="setting" data-setting="scroll-invert-move" />
+                              <span class="lever"></span>
+                              Invert
+                           </label>
+                        </span>
+                     
+                     </div>
+                  </div>
+                  
+                  <div class="col">
+                     <span class="slider">
+                        <label class="setting-label">
+                           Sensitivity
+                           <p class="range-field">
+                              <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="scroll-sensitivity" />
+                           </p>
+                        </label>
+                     </span>
+                  </div>
+
+                  <div class="col settings-label">
+                     One finger touch drag to: 
+                  </div>
+                  <div class="col">
+                     <div>
+                        <label>
+                           <input name="touch-drag" type="radio" class="with-gap setting" data-setting="touch-drag" value="move"/>
+                           <span class="reduced-padding">Move</span>
+                        </label>
+                        <label>
+                           <input name="touch-drag" type="radio" class="with-gap setting" data-setting="touch-drag" value="pan" checked/>
+                           <span class="reduced-padding">Pan</span>
+                        </label>
+                     </div>
+
+                  </div>
+                  <div class="col">
+                     
+                     <div>
+                        <span class="switch">
+                           <label>
+                              <input type="checkbox" class="setting" data-setting="touch-drag-move-invert" />
+                              <span class="lever"></span>
+                              Invert
+                           </label>
+                        </span>
+                     </div>
+
+                  </div>
+                  
+                  <div class="col">
+                     <span class="slider">
+                        <label class="setting-label">
+                           Sensitivity
+                           <p class="range-field">
+                              <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="touch-drag-sensitivity" />
+                           </p>
+                        </label>
+                     </span>
+                  </div>
+                  
+                  <div class="col settings-label">
+                     Two finger touch drag to: 
+                  </div>
+                  <div class="col">
+                     <div>
+                        <label>
+                           <input name="two-finger-drag" type="radio" class="with-gap setting" data-setting="two-finger-drag" value="move" checked/>
+                           <span class="reduced-padding">Move</span>
+                        </label>
+                        <label>
+                           <input name="two-finger-drag" type="radio" class="with-gap setting" data-setting="two-finger-drag" value="pan"/>
+                           <span class="reduced-padding">Pan</span>
+                        </label>
+                     </div>
+
+                  </div>
+                  <div class="col">
+                     
+                     <div>
+                        <span class="switch">
+                           <label>
+                              <input type="checkbox" class="setting" data-setting="gesture-move-invert" />
+                              <span class="lever"></span>
+                              Invert
+                           </label>
+                        </span>
+                     </div>
+                     
+                  </div>
+                  
+                  <div class="col">
+                     <span class="slider">
+                        <label class="setting-label">
+                           Sensitivity
+                           <p class="range-field">
+                              <input type="range" min="0" max="5" step="0.1" value="1" class="setting" data-setting="gesture-sensitivity" />
+                           </p>
+                        </label>
+                     </span>
+                  </div>
+
+                  <div class="col settings-label">
+                     Move with: 
+                  </div>
+                  <div class="col">
+                     <div>
+                        <label>
+                           <input name="wasd-move" type="checkbox" class="filled-in setting" data-setting="wasd-move" value="checked" checked/>
+                           <span class="reduced-padding">WASD</span>
+                        </label>
+                     </div>
+                     <div>
+                        <label>
+                           <input name="arrow-move" type="checkbox" class="filled-in setting" data-setting="arrow-move"/>
+                           <span class="reduced-padding">Arrow Keys</span>
+                        </label>
+                     </div>
+                     <div>
+                        <label>
+                           <input name="pinch-move" type="checkbox" class="filled-in setting" data-setting="pinch-move" checked/>
+                           <span class="reduced-padding">Pinch</span>
+                        </label>
+                     </div>
+
+                  </div>
+                  <div class="col" style="grid-column: span 2;">
+                     <div>
+
+                        <span class="switch">
+                           <label>
+                              <input type="checkbox" class="setting" data-setting="relative-forwards-movement"/>
+                              <span class="lever"></span>
+                              Make forwards movement relative to facing direciton
+                           </label>
+                        </span>
+                     
+                     </div>
+
+                  </div>
+               </div>
+
+               <button class="btn waves-effect waves-light" onclick="resetSettings()">Reset Settings</button>
+               
+            </div>
+            <script>
+               document.addEventListener('DOMContentLoaded', function() {
+                  var elems = document.querySelectorAll('.setting');
+                  for (var i = 0; i < elems.length; i++) {
+                     var elem = elems[i];
+                     loadSetting(elem);
+                     
+                     elem.addEventListener('change', function() {
+                        if(this.type === 'checkbox') {
+                           this.value = this.checked;
+                        }
+                        localStorage.setItem(this.getAttribute('data-setting'), this.value);
+
+                        console.log('Setting ' + this.getAttribute('data-setting') + ' to ' + this.value);
+                     });
+                  }
+               });
+
+               function resetSettings() {
+                  localStorage.clear();
+                  var elems = document.querySelectorAll('.setting');
+                  for (var i = 0; i < elems.length; i++) {
+                     var elem = elems[i];
+                     if(elem.type === 'radio' || elem.type === 'checkbox') {
+                        elem.checked = elem.getAttribute('data-default-value') === 'true' ? 'checked' : '';
+                     } else if(elem.type === 'checkbox') {
+                        elem.value = elem.getAttribute('data-default-value');
+                     }
+                  }
+               }
+               function loadSetting(elem) {
+                  var setting = elem.getAttribute('data-setting');
+                  var value = localStorage.getItem(setting);
+                  
+                  switch (elem.type) {
+                     case 'radio':
+                        elem.setAttribute('data-default-value', elem.checked);
+                        if (elem.checked) {
+                           localStorage.setItem(setting, elem.value);
+                        }
+                        if(value === null) return;
+                        isChecked = (value === elem.value);
+                        elem.checked = isChecked ? 'checked' : '';
+                        break;
+                     case 'checkbox':
+                        elem.setAttribute('data-default-value', elem.checked);
+                        if(value === null) return;
+                        elem.checked = (value === 'true') ? 'checked' : '';
+                        break;
+                     default:
+                        elem.setAttribute('data-default-value', elem.value);
+                        if(value === null) return;
+                        elem.value = value;
+                        break;
+                  }
+               }
+            </script>
          </div>
+         <div class="row">
+            <div class="col s12">
+               <h5 class="header light">
+                  Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
+               </h5>
+               <p>Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fab fa-discord"></i></a> (expect improvements soon)</p>
+               <p>Contribute to the project <a href="https://github.com/endingcredits/litematic-viewer/">here <i class="fa fa-github"></i></a></p>
+            </div>
          
          </div>
       </div>
