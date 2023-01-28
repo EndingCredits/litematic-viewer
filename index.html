@@ -34,6 +34,14 @@
              color: #FFF;
            }
          }
+
+         #viewer {
+             position:fixed;
+             left:0;
+             top:0;
+             width:100%;
+             height:100%;
+         }
       </style>
 
       <script src="src/litematic-utils.js"></script>
@@ -54,147 +62,153 @@
       </nav>
       -->
 
-      <div class="section no-pad-bot">
-         <div class="container">
-            <h3 class="header center">JANKY AF litematic viewer by Ending_Credits</h3>
-         </div>
-      </div>
-      
-      <div class="container">
-         <div class="row">
-            <div class="col s12" id="file-loader-panel">
+      <div id="main-content">
 
-               <input id="file-upload" type="file" onchange="readFileInput(this)" hidden multiple />
-            
-               <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" width="100%">
-                  <div class="card-panel center gray lighten-1">
-                     <h3>Select file(s)</h3>
-                     
-                     <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
-                  </div>
-               </label>
-               
+         <div class="section no-pad-bot">
+            <div class="container">
+               <h3 class="header center">JANKY AF litematic viewer by Ending_Credits</h3>
             </div>
-            
-         </div>
-      </div>
-      <div id="canvas-container" width="100%" tabindex='1'></div>
-
-      <!-- Texture atlas -->
-      <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
-
-
-      <script>
-
-         document.addEventListener("DOMContentLoaded", function(event) { 
-            const urlParams = new URLSearchParams(window.location.search);
-            const remoteUrl = urlParams.get('remote-url');
-
-            if (remoteUrl) {
-               console.log("Loading file from", remoteUrl);
-               readFileURL(remoteUrl);
-            }
-         });
-
-
-
-         function readFileInput(input) {
-            for (let i = 0; i < input.files.length; i++) {
-               let file = input.files[i];
-               readFile(file);
-            }
-         }
-
-         function readFileURL(url) {
-            var proxyUrl = 'https://api.allorigins.win/raw?url=' + url;
-            var request = new XMLHttpRequest();
-            request.responseType = 'blob';
-            request.onreadystatechange = function () {
-               if (request.readyState == XMLHttpRequest.DONE) {
-                  if (request.status === 200) {
-                     console.log("Loaded file from remote url");
-                     readFile(request.response);
-                  }
-                  else {
-                     console.log("Error loading litematic");
-                     console.log(request);
-                  }
-               }
-            };
-            request.open('GET', proxyUrl, true);
-            request.send();
-         }
-
-         function readFile(file) {
-            let reader = new FileReader();
-            reader.readAsArrayBuffer(file);
-            console.log(reader.result);
-
-            reader.onload = function(evt) {
-               var buff = new Uint8Array(reader.result);
-               console.log(buff);
-
-               const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
-               console.log("Loaded litematic with NBT data:")
-               console.log(nbtdata.value);
-               var litematic = readLitematicFromNBTData(nbtdata);
-
-               createRenderer(structureFromLitematic(litematic));
-
-               // Remove input form to stop people submitting twice
-               const elem = document.getElementById('file-loader-panel');
-               elem.parentNode.removeChild(elem);
-            };
-
-            reader.onerror = function() {
-               console.log(reader.error);
-            };
-            
-         }
-
-         function dragOverHandler(ev) {
-           // Prevent default behavior (Prevent file from being opened)
-           ev.preventDefault();
-         }
-
-         function dropHandler(ev) {
-           console.log('File(s) dropped');
-
-           // Prevent default behavior (Prevent file from being opened)
-           ev.preventDefault();
-
-           if (ev.dataTransfer.items) {
-             // Use DataTransferItemList interface to access the file(s)
-             for (let i = 0; i < ev.dataTransfer.items.length; i++) {
-               // If dropped items aren't files, reject them
-               if (ev.dataTransfer.items[i].kind === 'file') {
-                 const file = ev.dataTransfer.items[i].getAsFile();
-                 console.log('... file[' + i + '].name = ' + file.name);
-                 readFile(file);
-               }
-             }
-           } else {
-             // Use DataTransfer interface to access the file(s)
-             for (let i = 0; i < ev.dataTransfer.files.length; i++) {
-               console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
-               console.log('Not implemented!')
-             }
-           }
-         }
-
-      </script>
-
-      <div class="container">
-         <div class="row">
-            <div class="col s12">
-            <h5 class="header light">
-               Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
-            </h5>
-            Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fa-brands fa-discord"></i></a> (expect improvements soon)
          </div>
          
+         <div class="container">
+            <div class="row">
+               <div class="col s12" id="file-loader-panel">
+
+                  <input id="file-upload" type="file" onchange="readFileInput(this)" hidden multiple />
+               
+                  <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" width="100%">
+                     <div class="card-panel center gray lighten-1">
+                        <h3>Select file(s)</h3>
+                        
+                        <span id="file-upload-btn" class="btn btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></span>
+                     </div>
+                  </label>
+
+                  <input id="url-enter" type="text" onchange="readFileURL(this.value)" />
+
+               </div>
+               
+            </div>
          </div>
+
+         <!-- Texture atlas -->
+         <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
+
+         <script>
+
+            document.addEventListener("DOMContentLoaded", function(event) { 
+               const urlParams = new URLSearchParams(window.location.search);
+               const remoteUrl = urlParams.get('remote-url');
+
+               if (remoteUrl) {
+                  console.log("Loading file from", remoteUrl);
+                  readFileURL(remoteUrl);
+               }
+            });
+
+            function readFileInput(input) {
+               for (let i = 0; i < input.files.length; i++) {
+                  let file = input.files[i];
+                  readFile(file);
+               }
+            }
+
+            function readFileURL(url, useProxy=true) {
+
+               var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+               var request = new XMLHttpRequest();
+               request.responseType = 'blob';
+               request.onreadystatechange = function () {
+                  if (request.readyState == XMLHttpRequest.DONE) {
+                     if (request.status === 200) {
+                        console.log("Loaded file from remote url");
+                        console.log(request.response);
+                        readFile(request.response);
+                     }
+                     else {
+                        console.log("Error loading litematic");
+                        console.log(request);
+                     }
+                  }
+               };
+               request.open('GET', proxyUrl, true);
+               request.send();
+            }
+
+            function readFile(file) {
+               let reader = new FileReader();
+               reader.readAsArrayBuffer(file);
+               console.log(reader.result);
+
+               reader.onload = function(evt) {
+                  var buff = new Uint8Array(reader.result);
+                  console.log(buff);
+
+                  const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
+                  console.log("Loaded litematic with NBT data:")
+                  console.log(nbtdata.value);
+                  var litematic = readLitematicFromNBTData(nbtdata);
+
+                  createRenderer(structureFromLitematic(litematic));
+
+                  // Remove input form to stop people submitting twice
+                  const elem = document.getElementById('file-loader-panel');
+                  elem.parentNode.removeChild(elem);
+               };
+
+               reader.onerror = function() {
+                  console.log(reader.error);
+               };
+               
+            }
+
+            function dragOverHandler(ev) {
+              // Prevent default behavior (Prevent file from being opened)
+              ev.preventDefault();
+            }
+
+            function dropHandler(ev) {
+              console.log('File(s) dropped');
+
+              // Prevent default behavior (Prevent file from being opened)
+              ev.preventDefault();
+
+              if (ev.dataTransfer.items) {
+                // Use DataTransferItemList interface to access the file(s)
+                for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+                  // If dropped items aren't files, reject them
+                  if (ev.dataTransfer.items[i].kind === 'file') {
+                    const file = ev.dataTransfer.items[i].getAsFile();
+                    console.log('... file[' + i + '].name = ' + file.name);
+                    readFile(file);
+                  }
+                }
+              } else {
+                // Use DataTransfer interface to access the file(s)
+                for (let i = 0; i < ev.dataTransfer.files.length; i++) {
+                  console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
+                  console.log('Not implemented!')
+                }
+              }
+            }
+
+         </script>
+
+         <div class="container">
+            <div class="row">
+               <div class="col s12">
+               <h5 class="header light">
+                  Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
+               </h5>
+               Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fa-brands fa-discord"></i></a> (expect improvements soon)
+            </div>
+            
+            </div>
+         </div>
+
       </div>
+
+      <div id="viewer" width="100%"></div>
 
       <!--JavaScript at end of body for optimized loading-->
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

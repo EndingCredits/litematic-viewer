@@ -52,21 +52,23 @@ function loadResources(textureImage) {
 
 function createRenderer(structure) {
 
-  const canvasContainer = document.getElementById('canvas-container');
+  // Create canvas and size it appropriately
+  // TODO: Make size change on window resize
+  const viewer = document.getElementById('viewer');
   const canvas = document.createElement('canvas');
-  canvasContainer.appendChild(canvas);
-  // Make it visually fill the positioned parent
-  canvas.style.width  = '100%';
-  canvas.style.height = '100%';
-  // ...then set the internal size to match
-  canvas.width  = canvas.offsetWidth;
-  canvas.height = canvas.offsetWidth*0.75; // 4:3 aspect ratio
+  viewer.appendChild(canvas);
 
-  //const canvas = document.getElementById('render-canvas');
+  canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 
-  const gl = canvas.getContext('webgl');
-  
+  // Remove old content
+  const oldContent = document.getElementById('main-content');
+  oldContent.style.display = "none";
+
+
+  // Create Deepslate Renderer
   // Need chunksize 8 as seems to be a max number of faces per chunk that will render
+  const gl = canvas.getContext('webgl');
   const renderer = new deepslate.StructureRenderer(gl, structure, deepslateResources, options={chunkSize: 8});
 
   // Crappy controls
@@ -95,6 +97,7 @@ function createRenderer(structure) {
     renderer.drawStructure(view);
     renderer.drawGrid(view);
   }
+  
   requestAnimationFrame(render);
 
   let rotatePos = null;
