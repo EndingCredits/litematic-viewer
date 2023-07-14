@@ -33,6 +33,9 @@
              background: #111;
              color: #FFF;
            }
+            input#remote-url {
+               color: white;
+            }
          }
 
          #viewer {
@@ -545,14 +548,16 @@
             function loadSetting(elem) {
                var setting = elem.getAttribute('data-setting');
                var value = localStorage.getItem(setting);
-               
+               console.log('Loading setting ' + setting + ' with value ' + value);
                switch (elem.type) {
                   case 'radio':
                      elem.setAttribute('data-default-value', elem.checked);
-                     if (elem.checked) {
-                        localStorage.setItem(setting, elem.value);
+                     if(value === null) {
+                        if (elem.checked) {
+                           localStorage.setItem(setting, elem.value);
+                        }
+                        return;
                      }
-                     if(value === null) return;
                      isChecked = (value === elem.value);
                      elem.checked = isChecked ? 'checked' : '';
                      break;
