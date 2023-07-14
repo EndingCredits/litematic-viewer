@@ -144,7 +144,6 @@ function createRenderer(structure) {
         sensitivity *= -1;
       }
     }
-    console.log(setting, value, sensitivity);
     controls[value](evt, sensitivity);
     // controls[value](evt);
   }
