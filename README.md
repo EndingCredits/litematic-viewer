@@ -1,1 +1,4 @@
-Fork for endingcredit's Litematic Viewer
+# EndingCredits' Litematic Viewer
+
+Powered by [DeepSlate](https://github.com/misode/deepslate)
+
