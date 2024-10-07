@@ -7,8 +7,8 @@
       <title>Litematic Viewer</title>
 
       <!-- Deepslate -->
-      <script src="https://unpkg.com/deepslate@0.10.0"></script>
-      <script src="https://unpkg.com/gl-matrix@3.3.0/gl-matrix-min.js"></script>
+      <script src="https://unpkg.com/deepslate@0.10.1"></script>
+      <script src="https://unpkg.com/gl-matrix@3.4.3/gl-matrix-min.js"></script>
 
       <script src="resource/assets.js"></script>
       <script src="resource/opaque.js"></script>
@@ -151,13 +151,14 @@
                <h5 class="header light">
                   Powered by <a href="https://github.com/misode/deepslate">DeepSlate <i class="fa fa-github fa-1x"></i></a>
                </h5>
+               <p>Known issues: Cannot render Banner, Bed, Chest, Decorated Pot, Sign, Shulker box</p>
                <p>Complain about this app <a href="https://discord.gg/GJckUsHsVB">here <i class="fab fa-discord"></i></a> (expect improvements soon)</p>
                <p>Contribute to the project <a href="https://github.com/endingcredits/litematic-viewer/">here <i class="fa fa-github"></i></a></p>
             </div>
          </div>
 
          <!-- Texture atlas -->
-         <img id="atlas" src="https://raw.githubusercontent.com/misode/deepslate-demo/main/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
+         <img id="atlas" src="resource/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
 
          <script>
             document.addEventListener("DOMContentLoaded", function(event) { 

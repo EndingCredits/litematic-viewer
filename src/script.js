@@ -12,8 +12,18 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 });
 
+function upperPowerOfTwo(x) {
+	x -= 1
+	x |= x >> 1
+	x |= x >> 2
+	x |= x >> 4
+	x |= x >> 8
+	x |= x >> 18
+	x |= x >> 32
+	return x + 1
+}
+
 // Taken from Deepslate examples
-// TODO: Pass in assets.js and opaque.js
 function loadResources(textureImage) {
   const blockDefinitions = {};
   Object.keys(assets.blockstates).forEach(id => {
@@ -27,17 +37,23 @@ function loadResources(textureImage) {
   Object.values(blockModels).forEach(m => m.flatten({ getBlockModel: id => blockModels[id] }));
 
   const atlasCanvas = document.createElement('canvas');
+  const atlasSize = upperPowerOfTwo((textureImage.width >= textureImage.height) ? textureImage.width : textureImage.height);
   atlasCanvas.width = textureImage.width;
   atlasCanvas.height = textureImage.height;
+
   const atlasCtx = atlasCanvas.getContext('2d');
   atlasCtx.drawImage(textureImage, 0, 0);
-  const atlasData = atlasCtx.getImageData(0, 0, atlasCanvas.width, atlasCanvas.height);
-  const part = 16 / atlasData.width;
+
+  const atlasData = atlasCtx.getImageData(0, 0, atlasSize, atlasSize);
+
   const idMap = {};
+
   Object.keys(assets.textures).forEach(id => {
-    const [u, v] = assets.textures[id];
-    idMap['minecraft:' + id] = [u, v, u + part, v + part];
-  })
+		const [u, v, du, dv] = assets.textures[id]
+		const dv2 = (du !== dv && id.startsWith('block/')) ? du : dv
+		idMap['minecraft:' + id] = [u / atlasSize, v / atlasSize, (u + du) / atlasSize, (v + dv2) / atlasSize]
+	})
+
   const textureAtlas = new deepslate.TextureAtlas(atlasData, idMap);
 
   deepslateResources = {
@@ -45,7 +61,7 @@ function loadResources(textureImage) {
     getBlockModel(id) { return blockModels[id] },
     getTextureUV(id) { return textureAtlas.getTextureUV(id) },
     getTextureAtlas() { return textureAtlas.getTextureAtlas() },
-    getBlockFlags(id) { return { opaque: opaqueBlocks.has(id) } },
+    getBlockFlags(id) { return { opaque: false } },
     getBlockProperties(id) { return null },
     getDefaultBlockProperties(id) { return null },
   }
