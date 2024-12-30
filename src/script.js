@@ -223,29 +223,31 @@ function createRenderer(structure) {
   
   const moveDist = 0.2;
   const keyMoves = {
-    w: [0, 0, moveDist],
-    s: [0, 0, -moveDist],
-    a: [moveDist, 0, 0],
-    d: [-moveDist, 0, 0],
+    KeyW: [0, 0, moveDist],
+    KeyS: [0, 0, -moveDist],
+    KeyA: [moveDist, 0, 0],
+    KeyD: [-moveDist, 0, 0],
     ArrowUp: [0, 0, moveDist],
     ArrowDown: [0, 0, -moveDist],
     ArrowLeft: [moveDist, 0, 0],
     ArrowRight: [-moveDist, 0, 0],
-    Shift: [0, moveDist, 0],
-    ' ': [0, -moveDist, 0]
+    ShiftLeft: [0, moveDist, 0],
+    Space: [0, -moveDist, 0]
   };
   let pressedKeys = new Set();
   
   document.addEventListener('keydown', evt => {
-    if (evt.key in keyMoves) {
+    if (evt.code in keyMoves) {
       evt.preventDefault();
-      pressedKeys.add(evt.key);
+      pressedKeys.add(evt.code);
     }
   });
   
   document.addEventListener('keyup', evt => {
-    pressedKeys.delete(evt.key);
+    pressedKeys.delete(evt.code);
   });
+
+  window.addEventListener('blur', () => pressedKeys.clear());
   
   setInterval(() => {
     if(pressedKeys.size == 0) return;
