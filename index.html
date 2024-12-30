@@ -48,8 +48,11 @@
          }
       </style>
 
+      <script src="src/deepslate-helpers.js"></script>
       <script src="src/litematic-utils.js"></script>
-      <script src="src/script.js"></script>
+      <script src="src/main.js"></script>
+      <script src="src/settings.js"></script>
+      <script src="src/viewer.js"></script>
 
       <!-- Google tag (gtag.js) -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-C0DVDW0WXS"></script>
@@ -104,6 +107,21 @@
             font-size: 36px;
             margin-left: 50px;
          }
+
+         #sliders input[type="range"] {
+            writing-mode: vertical-lr;
+            direction: rtl;
+            appearance: slider-vertical;
+            position: absolute;
+            background-color: #000;
+            width: 20px;
+            height: 95%;
+            vertical-align: bottom;
+         }
+
+         #sliders #maxy {
+            left: 25px;
+         }
       </style>
 
    </head>
@@ -111,6 +129,8 @@
    <body>
 
       <div id="viewer" width="100%"></div>
+
+      <div id="sliders" hidden></div>
 
       <div id="main-content">
 
@@ -161,6 +181,31 @@
          <img id="atlas" src="resource/atlas.png" alt="Texture atlas" crossorigin="anonymous" hidden>
 
          <script>
+
+            // Add listener to load resrouces from atlas
+            // TODO - move to index as an onload?
+            document.addEventListener("DOMContentLoaded", function(event) {
+
+              console.log("Adding loader")
+
+              const image = document.getElementById('atlas');
+              if (image.complete) {
+                console.log("Adding loader")
+                loadDeepslateResources(image);
+              } else {
+                 console.log("Setting up load listener");
+                 image.addEventListener('load', () => {
+                     console.log("Image load event triggered");
+                     //loadDeepslateResources(image);
+                 });
+              }
+
+              image.addEventListener('error', (error) => {
+                console.error("Error loading image:", error);
+              });
+
+            });
+
             document.addEventListener("DOMContentLoaded", function(event) { 
                const urlParams = new URLSearchParams(window.location.search);
                const remoteUrl = urlParams.get('remote-url');
@@ -174,12 +219,12 @@
             function readFileInput(input) {
                for (let i = 0; i < input.files.length; i++) {
                   let file = input.files[i];
-                  readFile(file);
+                  loadAndProcessFile(file);
                }
             }
 
             function readFileURL(url, useProxy=true) {
-
+               // TODO: This URL probably shouldn't be hardcoded
                var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
                var request = new XMLHttpRequest();
                request.responseType = 'blob';
@@ -188,7 +233,7 @@
                      if (request.status === 200) {
                         console.log("Loaded file from remote url");
                         console.log(request.response);
-                        readFile(request.response);
+                        loadAndProcessFile(request.response);
                      }
                      else {
                         console.log("Error loading litematic");
@@ -198,33 +243,6 @@
                };
                request.open('GET', proxyUrl, true);
                request.send();
-            }
-
-            function readFile(file) {
-               let reader = new FileReader();
-               reader.readAsArrayBuffer(file);
-               console.log(reader.result);
-
-               reader.onload = function(evt) {
-                  var buff = new Uint8Array(reader.result);
-                  console.log(buff);
-
-                  const nbtdata = deepslate.readNbt(new Uint8Array(reader.result));//.result; // Don't care about .compressed
-                  console.log("Loaded litematic with NBT data:")
-                  console.log(nbtdata.value);
-                  var litematic = readLitematicFromNBTData(nbtdata);
-
-                  createRenderer(structureFromLitematic(litematic));
-
-                  // Remove input form to stop people submitting twice
-                  const elem = document.getElementById('file-loader-panel');
-                  elem.parentNode.removeChild(elem);
-               };
-
-               reader.onerror = function() {
-                  console.log(reader.error);
-               };
-               
             }
 
             function dragOverHandler(ev) {
@@ -245,15 +263,16 @@
                   if (ev.dataTransfer.items[i].kind === 'file') {
                     const file = ev.dataTransfer.items[i].getAsFile();
                     console.log('... file[' + i + '].name = ' + file.name);
-                    readFile(file);
+                    loadAndProcessFile(file);
                   }
                 }
               } else {
                 // Use DataTransfer interface to access the file(s)
+                console.log('DataTransfer interface not implemented!')
                 for (let i = 0; i < ev.dataTransfer.files.length; i++) {
                   console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
-                  console.log('Not implemented!')
                 }
+
               }
             }
 
@@ -525,66 +544,6 @@
          </div>
 
          <button class="btn waves-effect waves-light" onclick="resetSettings()">Reset Settings</button>
-
-         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-               var elems = document.querySelectorAll('.setting');
-               for (var i = 0; i < elems.length; i++) {
-                  var elem = elems[i];
-                  loadSetting(elem);
-                  
-                  elem.addEventListener('change', function() {
-                     if(this.type === 'checkbox') {
-                        this.value = this.checked;
-                     }
-                     localStorage.setItem(this.getAttribute('data-setting'), this.value);
-
-                     console.log('Setting ' + this.getAttribute('data-setting') + ' to ' + this.value);
-                  });
-               }
-            });
-
-            function resetSettings() {
-               localStorage.clear();
-               var elems = document.querySelectorAll('.setting');
-               for (var i = 0; i < elems.length; i++) {
-                  var elem = elems[i];
-                  if(elem.type === 'radio' || elem.type === 'checkbox') {
-                     elem.checked = elem.getAttribute('data-default-value') === 'true' ? 'checked' : '';
-                  } else if(elem.type === 'checkbox') {
-                     elem.value = elem.getAttribute('data-default-value');
-                  }
-               }
-            }
-            function loadSetting(elem) {
-               var setting = elem.getAttribute('data-setting');
-               var value = localStorage.getItem(setting);
-               console.log('Loading setting ' + setting + ' with value ' + value);
-               switch (elem.type) {
-                  case 'radio':
-                     elem.setAttribute('data-default-value', elem.checked);
-                     if(value === null) {
-                        if (elem.checked) {
-                           localStorage.setItem(setting, elem.value);
-                        }
-                        return;
-                     }
-                     isChecked = (value === elem.value);
-                     elem.checked = isChecked ? 'checked' : '';
-                     break;
-                  case 'checkbox':
-                     elem.setAttribute('data-default-value', elem.checked);
-                     if(value === null) return;
-                     elem.checked = (value === 'true') ? 'checked' : '';
-                     break;
-                  default:
-                     elem.setAttribute('data-default-value', elem.value);
-                     if(value === null) return;
-                     elem.value = value;
-                     break;
-               }
-            }
-         </script>
       </div>
 
       <!--JavaScript at end of body for optimized loading-->
