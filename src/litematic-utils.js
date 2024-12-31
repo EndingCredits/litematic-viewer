@@ -24,6 +24,7 @@ function readLitematicFromNBTData(nbtdata) {
     // Find the minimum number of bits needed to express all blocks
     nbits = Math.ceil(Math.log2(blockPalette.length));
 
+    // Get siize of region
     width = region.Size.value.x.value; 
     height = region.Size.value.y.value;
     depth = region.Size.value.z.value; 
@@ -35,6 +36,8 @@ function readLitematicFromNBTData(nbtdata) {
     var litematicRegion = new LitematicRegion(width, height, depth);
     litematicRegion.blocks = blocks;
     litematicRegion.blockPalette = blockPalette;
+    ['Size', 'Position', 'Entities']
+     .forEach(attr => { litematicRegion[attr] = __stripNBTTyping(region[attr]); });
 
     litematic.regions.push(litematicRegion);
   }
@@ -135,6 +138,8 @@ function __stripNBTTyping(nbtData) {
 }
 
 
+// Simple block counter
+// it has been noted that there is the rare possibility that two regions overlap the same blocks
 function getMaterialList(litematic) {
   var blockCounts = {};
 
@@ -166,4 +171,59 @@ function getMaterialList(litematic) {
   //console.log("Material list:", blockCounts);
 
   return blockCounts;
+}
+
+
+function calculateRegionBounds(litematic) {
+  // Generated with help from Claude
+  const regions = litematic.regions;
+
+  // Convert negative sizes to positive and adjust position
+  const normalizedRegions = regions.map(region => {
+    const normalized = {
+      pos: { ...region.Position },
+      size: { ...region.Size }
+    };
+    
+    // For each dimension, if size is negative:
+    // - Make size positive
+    // - Adjust position by (size-1)
+    ['x', 'y', 'z'].forEach(dim => {
+      if (normalized.size[dim] < 0) {
+        normalized.pos[dim] += normalized.size[dim] + 1;
+        normalized.size[dim] = Math.abs(normalized.size[dim]);
+      }
+    });
+    
+    return normalized;
+  });
+
+  // Find min/max bounds
+  const bounds = normalizedRegions.reduce((acc, region) => {
+    ['x', 'y', 'z'].forEach(dim => {
+      acc.min[dim] = Math.min(acc.min[dim], region.pos[dim]);
+      acc.max[dim] = Math.max(acc.max[dim], region.pos[dim] + region.size[dim] - 1);
+    });
+    return acc;
+  }, {
+    min: { x: Infinity, y: Infinity, z: Infinity },
+    max: { x: -Infinity, y: -Infinity, z: -Infinity }
+  });
+
+  // Calculate offsets relative to 0,0,0
+  const offsets = normalizedRegions.map(region => ({
+    x: region.pos.x - bounds.min.x,
+    y: region.pos.y - bounds.min.y, 
+    z: region.pos.z - bounds.min.z
+  }));
+
+  return {
+    bounds,
+    offsets,
+    size: {
+      x: bounds.max.x - bounds.min.x + 1,
+      y: bounds.max.y - bounds.min.y + 1,
+      z: bounds.max.z - bounds.min.z + 1
+    }
+  };
 }

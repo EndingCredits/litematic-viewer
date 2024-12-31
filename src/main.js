@@ -8,6 +8,7 @@ function loadAndProcessFile(file) {
    const elem = document.getElementById('file-loader-panel');
    elem.parentNode.removeChild(elem);
       
+   //Read in file and process
    let reader = new FileReader();
    reader.readAsArrayBuffer(file);
    reader.onload = function(evt) {
@@ -22,15 +23,15 @@ function loadAndProcessFile(file) {
       
       createRenderCanvas();
 
-      //Create sliders
-      const max_y = structureLitematic.regions[0].blocks[0].length;
-      createRangeSliders(max_y);
+      // Create sliders
+      const { size } = calculateRegionBounds(structureLitematic);
+      createRangeSliders(size.y);
 
+      // Create material list button
       const blockCounts = getMaterialList(structureLitematic);
       createMaterialsList(blockCounts);
 
       setStructure(structureFromLitematic(structureLitematic), reset_view=true);
-
    };
    reader.onerror = function() {
       console.log(reader.error);
@@ -96,7 +97,7 @@ function createRangeSliders(max_y) {
    maxSlider.id = 'maxy';
    maxSlider.min = 0;
    maxSlider.max = max_y;
-   maxSlider.value = max_y-1;
+   maxSlider.value = max_y;
    maxSlider.step = 1;
 
    var y_min = 0;
@@ -104,13 +105,13 @@ function createRangeSliders(max_y) {
 
    minSlider.addEventListener('change', function(e) {
       y_min = e.target.value;
-      console.log(y_min);
+      console.log("Set y_min to", y_min);
       setStructure(structureFromLitematic(structureLitematic, y_min=y_min, y_max=y_max));
    });
 
    maxSlider.addEventListener('change', function(e) {
       y_max = e.target.value;
-      console.log(y_max);
+      console.log("Set y_max to", y_max);
       setStructure(structureFromLitematic(structureLitematic, y_min=y_min, y_max=y_max));
    });
 

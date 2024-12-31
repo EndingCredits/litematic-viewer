@@ -59,45 +59,56 @@ function loadDeepslateResources(textureImage) {
   return deepslateResources;
 }
 
-function structureFromLitematic(litematic, y_min=0, y_max=-1) {
-  var blocks = litematic.regions[0].blocks;
-  var blockPalette = litematic.regions[0].blockPalette;
+function structureFromLitematic(litematic, y_min=0, y_max=1024) {
 
-  // Could probably make an intermediate block array type for this
-  // Does js have good 3D arrays?
-  width = blocks.length;
-  height = blocks[0].length;
-  depth = blocks[0][0].length;
+  const { bounds, offsets, size } = calculateRegionBounds(litematic);
 
-  if (y_max == -1) { y_max = height; } // there's probably a nicer expression here
-  y_max = Math.min(y_max, height);
-  
-  const structure = new deepslate.Structure([width, height, depth]);
-  
-  // Add blocks manually from the blocks loaded from the NBT
-  var blockCount = 0;
-  console.log("Building blocks...");
-  for (let x=0; x < width; x++) {
-    for (let y=y_min; y < y_max; y++) {
-      for (let z=0; z < depth; z++) {
-        blockID = blocks[x][y][z];
+  const structure = new deepslate.Structure([size.x, size.y, size.z]);
+    
+  for (const [index, region] of litematic.regions.entries()) {
+    const offset = offsets[index];
 
-        if (blockID > 0) { // Skip air-blocks
-        
-          if(blockID < blockPalette.length) {
-            blockInfo = blockPalette[blockID];
-            blockName = blockInfo.Name;
-            blockCount++;
-            
-            if (blockInfo.hasOwnProperty("Properties")) {
-              structure.addBlock([x, y, z], blockName, blockInfo.Properties);
+    const blocks = region.blocks;
+    const blockPalette = region.blockPalette;
+
+    //console.log(blocks);
+
+    // Could probably make an intermediate block array type for this
+    // Does js have good 3D arrays?
+    const width = blocks.length;
+    const height = blocks[0].length;
+    const depth = blocks[0][0].length;
+
+    var y_min_r = y_min - offset.y;
+    var y_max_r = y_max - offset.y;
+    y_min_r = Math.max(y_min_r, 0);
+    y_max_r = Math.min(y_max_r, height);
+
+    // Add blocks manually from the blocks loaded from the NBT
+    var blockCount = 0;
+    console.log("Building blocks...");
+    for (let x=0; x < width; x++) {
+      for (let y=y_min_r; y < y_max_r; y++) {
+        for (let z=0; z < depth; z++) {
+          blockID = blocks[x][y][z];
+
+          if (blockID > 0) { // Skip air-blocks
+          
+            if(blockID < blockPalette.length) {
+              blockInfo = blockPalette[blockID];
+              blockName = blockInfo.Name;
+              blockCount++;
+              
+              if (blockInfo.hasOwnProperty("Properties")) {
+                structure.addBlock([offset.x+x, offset.y+y, offset.z+z], blockName, blockInfo.Properties);
+              } else {
+                structure.addBlock([offset.x+x, offset.y+y, offset.z+z], blockName);
+              }
+              
             } else {
-              structure.addBlock([x, y, z], blockName);
+              // Something obvious so we know when things go wrong
+              structure.addBlock([offset.x+x, offset.y+y, offset.z+z], "minecraft:cake")
             }
-            
-          } else {
-            // Something obvious so we know when things go wrong
-            structure.addBlock([x, y, z], "minecraft:cake")
           }
         }
       }
