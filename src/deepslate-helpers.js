@@ -75,7 +75,7 @@ function structureFromLitematic(litematic, y_min=0, y_max=-1) {
   const structure = new deepslate.Structure([width, height, depth]);
   
   // Add blocks manually from the blocks loaded from the NBT
-  var blockCount = 0
+  var blockCount = 0;
   console.log("Building blocks...");
   for (let x=0; x < width; x++) {
     for (let y=y_min; y < y_max; y++) {
