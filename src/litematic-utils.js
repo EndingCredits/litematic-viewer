@@ -133,3 +133,37 @@ function __stripNBTTyping(nbtData) {
     }
   }
 }
+
+
+function getMaterialList(litematic) {
+  var blockCounts = {};
+
+  for (const region of litematic.regions) {
+    var blocks = region.blocks;
+    var blockPalette = region.blockPalette;
+
+    width = blocks.length;
+    height = blocks[0].length;
+    depth = blocks[0][0].length;
+    for (let x=0; x < width; x++) {
+      for (let y=0; y < height; y++) {
+        for (let z=0; z < depth; z++) {
+          blockID = blocks[x][y][z];
+          if (blockID > 0) {
+            if(blockID < blockPalette.length) {
+              blockInfo = blockPalette[blockID];
+              blockName = blockInfo.Name;
+              blockCounts[blockName] = (blockCounts[blockName] || 0) + 1;
+            } else {
+              // Something obvious so we know when things go wrong
+              blockCounts["unknown"] = (blockCounts["unknown"] || 0) + 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  //console.log("Material list:", blockCounts);
+
+  return blockCounts;
+}
