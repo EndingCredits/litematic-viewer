@@ -54,6 +54,29 @@ function createMaterialsList(blockCounts) {
    //materialListButton.onmouseout = () => materialList.style.display = 'none';
 
    materialListButton.onclick = () => materialList.style.display = materialList.style.display === 'none' ? 'block' : 'none';
+
+   function downloadMaterialsCSV() {
+      const csvContent = Object.entries(blockCounts)
+      .sort(([,a], [,b]) => b - a)
+      .map(([key, val]) => `${key},${val}`)
+      .join('\n');
+
+       const blob = new Blob([csvContent], { type: 'text/csv' });
+       const url = window.URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url;
+       a.download = 'MaterialList.csv';
+       a.click();
+       window.URL.revokeObjectURL(url);
+   }
+
+   // Add download button
+   const downloadBtn = document.createElement('button');
+   downloadBtn.innerHTML = '<span class="material-icons">download</span>';
+   downloadBtn.className = 'material-button';
+   downloadBtn.onclick = downloadMaterialsCSV;
+   materialList.appendChild(downloadBtn);
+
 }
 
 function createRangeSliders(max_y) {
