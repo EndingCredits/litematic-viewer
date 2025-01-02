@@ -11,7 +11,7 @@ function setStructure(structure, reset_view=false) {
 
   // Create Deepslate Renderer
   // Need chunksize 8 as seems to be a max number of faces per chunk that will render
-  deepslateRenderer = new deepslate.StructureRenderer(webglContext, structure, deepslateResources, options={chunkSize: 8});
+  deepslateRenderer = new deepslate.StructureRenderer(webglContext, structure, deepslateResources, options={chunkSize: 8, useInvisibleBlockBuffer: false});
 
   if (reset_view) {
     cameraPitch = 0.8; cameraYaw = 0.5;
