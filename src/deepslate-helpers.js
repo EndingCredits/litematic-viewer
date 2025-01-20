@@ -51,7 +51,13 @@ function loadDeepslateResources(textureImage) {
     getBlockModel(id) { return blockModels[id] },
     getTextureUV(id) { return textureAtlas.getTextureUV(id) },
     getTextureAtlas() { return textureAtlas.getTextureAtlas() },
-    getBlockFlags(id) { return { opaque: false } },
+    getBlockFlags(id) {
+      return {
+        opaque: OPAQUE_BLOCKS.has(id.toString()),
+        self_culling: !NON_SELF_CULLING.has(id.toString()),
+        semi_transparent: TRANSPARENT_BLOCKS.has(id.toString()),
+      };
+    },
     getBlockProperties(id) { return null },
     getDefaultBlockProperties(id) { return null },
   }
@@ -71,9 +77,9 @@ function structureFromLitematic(litematic, y_min=0, y_max=-1) {
 
   if (y_max == -1) { y_max = height; } // there's probably a nicer expression here
   y_max = Math.min(y_max, height);
-  
+
   const structure = new deepslate.Structure([width, height, depth]);
-  
+
   // Add blocks manually from the blocks loaded from the NBT
   var blockCount = 0;
   console.log("Building blocks...");
@@ -83,18 +89,18 @@ function structureFromLitematic(litematic, y_min=0, y_max=-1) {
         blockID = blocks[x][y][z];
 
         if (blockID > 0) { // Skip air-blocks
-        
+
           if(blockID < blockPalette.length) {
             blockInfo = blockPalette[blockID];
             blockName = blockInfo.Name;
             blockCount++;
-            
+
             if (blockInfo.hasOwnProperty("Properties")) {
               structure.addBlock([x, y, z], blockName, blockInfo.Properties);
             } else {
               structure.addBlock([x, y, z], blockName);
             }
-            
+
           } else {
             // Something obvious so we know when things go wrong
             structure.addBlock([x, y, z], "minecraft:cake")
