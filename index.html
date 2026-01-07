@@ -145,6 +145,37 @@
          #sliders #maxy {
             left: 25px;
          }
+
+         #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+         }
+
+         #loading-overlay.show {
+            display: flex;
+         }
+
+         .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+         }
+
+         @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+         }
       </style>
 
    </head>
@@ -152,6 +183,10 @@
    <body>
 
       <div id="viewer" width="100%"></div>
+
+      <div id="loading-overlay">
+         <div class="spinner"></div>
+      </div>
 
       <div id="sliders" hidden></div>
       <button id="materialListButton" hidden><span class="material-icons">list</span></button>
@@ -237,6 +272,7 @@
 
                if (remoteUrl) {
                   console.log("Loading file from", remoteUrl);
+                  showLoading();
                   readFileURL(remoteUrl);
                }
             });
@@ -248,6 +284,14 @@
                }
             }
 
+            function showLoading() {
+               document.getElementById('loading-overlay').classList.add('show');
+            }
+
+            function hideLoading() {
+               document.getElementById('loading-overlay').classList.remove('show');
+            }
+
             function readFileURL(url, useProxy=true) {
                // TODO: This URL probably shouldn't be hardcoded
                var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
@@ -255,6 +299,7 @@
                request.responseType = 'blob';
                request.onreadystatechange = function () {
                   if (request.readyState == XMLHttpRequest.DONE) {
+                     hideLoading();
                      if (request.status === 200) {
                         console.log("Loaded file from remote url");
                         console.log(request.response);
